@@ -219,6 +219,19 @@ namespace MKSCTrackImporter
                     new XAttribute("source", trackName + ".png"), new XAttribute("width", "128"), new XAttribute("height", "128")
                 )
             );
+            for (int i = 0; i < 256; i++) {
+                tilesetData.Add(
+                    new XElement("tile", new XAttribute("id",i.ToString()),
+                        new XElement("properties",
+                            new XElement("property",
+                                new XAttribute("name", "behavior"),
+                                new XAttribute("type", "int"),
+                                new XAttribute("value", track.tileBehaviors[i])
+                            )
+                        )
+                    )
+                );
+            }
             if (saveFileDialog.ShowDialog() == DialogResult.OK)
             {
                 try
@@ -314,10 +327,20 @@ namespace MKSCTrackImporter
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-            openFileDialog.Filter = "Image Files|*.bmp;*.png|All Files|*.*";
+            openFileDialog.Filter = "TSX Files|*.tsx;|All Files|*.*";
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
-                Bitmap tileset = (Bitmap)Image.FromFile(openFileDialog.FileName);
+                XDocument tilesetDoc = XDocument.Load(openFileDialog.FileName);
+                
+                var tilesetPath = Path.Combine(Path.GetDirectoryName(openFileDialog.FileName), tilesetDoc.Root.Element("image").Attribute("source").Value);
+
+                byte[] behaviors =
+                    (from element in tilesetDoc.Root.Elements("tile")
+                    select byte.Parse(element.Element("properties").Elements("property").Where(x => x.Attribute("name").Value == "behavior")
+                    .First().Attribute("value").Value)).ToArray();
+                manager.trackManager.tracks[trackSelector.SelectedIndex].tileBehaviors = behaviors;
+
+                Bitmap tileset = (Bitmap)Image.FromFile(tilesetPath);
 
                 var width = tileset.Width;
                 var height = tileset.Height;

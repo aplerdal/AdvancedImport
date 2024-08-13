@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.35122.118
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MKSCTrackImporter", "MKSCTrackImporter\MKSCTrackImporter.csproj", "{4292ECF2-FA6A-46B3-86A9-FEEA07EBFEDB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AdvancedImport", "MKSCTrackImporter\AdvancedImport.csproj", "{4292ECF2-FA6A-46B3-86A9-FEEA07EBFEDB}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BinarySerializer", "BinarySerializer\src\BinarySerializer.csproj", "{07738983-2947-488E-B002-80745DA81AD9}"
 EndProject
