@@ -154,7 +154,7 @@ namespace MKSCTrackImporter
                     {
                         for (int j = 0; j < 8; j++)
                         {
-                            pixelData[(y*8+i) * stride + (x*8+j)] = track.tileset.tiles[y * 16 + x].indicies[i,j];
+                            pixelData[(y*8+i) * stride + (x*8+j)] = track.tileset.tiles[y * 16 + x].indicies[j,i];
                         }
                     }
                 }
@@ -369,7 +369,7 @@ namespace MKSCTrackImporter
                         {
                             for (int j = 0; j < 8; j++)
                             {
-                                indicies[j, i] = Math.Clamp(pixelData[(y * 8 + j) * 128 + (x * 8 + i)], (byte)0, (byte)63);
+                                indicies[i, j] = Math.Clamp(pixelData[(y * 8 + j) * 128 + (x * 8 + i)], (byte)0, (byte)63);
                             }
                         }
                         tiles[y * 16 + x] = new Tile(indicies);
