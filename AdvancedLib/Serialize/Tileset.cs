@@ -8,6 +8,7 @@ namespace AdvancedLib.Serialize;
 
 public class Tileset : BinarySerializable
 {
+    public bool lookback { get; set; }
     Pointer?[] tilePointers { get; set; }
     public byte[] indicies { 
         get {
@@ -53,14 +54,22 @@ public class Tileset : BinarySerializable
     CompressedBlock<byte>[] tileBlocks;
     public override void SerializeImpl(SerializerObject s)
     {
-        Pointer basePointer = s.CurrentPointer;
-        tilePointers = s.SerializePointerArray(tilePointers,4,PointerSize.Pointer16, basePointer, name: nameof(tilePointers));
-        s.SerializePadding(24); // make sure pointer table has length of 32
-        tileBlocks = s.InitializeArray(tileBlocks, 4);
-        for (int i = 0; i < tilePointers.Length; i++)
+        if (!lookback)
         {
-            s.Goto(tilePointers[i]);
-            tileBlocks[i] = s.SerializeObject<CompressedBlock<byte>>(tileBlocks[i], onPreSerialize: x => x.dataLength = 4096, name: $"layoutPart{i}");
+            Pointer basePointer = s.CurrentPointer;
+            tilePointers = s.SerializePointerArray(tilePointers, 4, PointerSize.Pointer16, basePointer, name: nameof(tilePointers));
+            s.SerializePadding(24); // make sure pointer table has length of 32
+            tileBlocks = s.InitializeArray(tileBlocks, 4);
+            for (int i = 0; i < tilePointers.Length; i++)
+            {
+                s.Goto(tilePointers[i]);
+                tileBlocks[i] = s.SerializeObject<CompressedBlock<byte>>(tileBlocks[i], onPreSerialize: x => x.dataLength = 4096, name: $"layoutPart{i}");
+            }
+        }
+        else
+        {
+            tileBlocks = s.InitializeArray(tileBlocks, 4);
+            tilePointers = s.InitializeArray(tilePointers,4);
         }
     }
     public override void RecalculateSize()
@@ -68,13 +77,14 @@ public class Tileset : BinarySerializable
         int position = 0;
 
         position = 32;
-
-        for (int i = 0; i < tileBlocks.Length; i++)
-        {
-            CompressedBlock<byte> block = tileBlocks[i];
-            tilePointers[i] = new Pointer(position, tilePointers[i].File, tilePointers[i].Anchor, PointerSize.Pointer16);
-            block.RecalculateSize();
-            position += (int)block.SerializedSize;
+        if (!lookback) {
+            for (int i = 0; i < tileBlocks.Length; i++)
+            {
+                CompressedBlock<byte> block = tileBlocks[i];
+                tilePointers[i] = new Pointer(position, tilePointers[i].File, tilePointers[i].Anchor, PointerSize.Pointer16);
+                block.RecalculateSize();
+                position += (int)block.SerializedSize;
+            }
         }
 
         base.RecalculateSize();

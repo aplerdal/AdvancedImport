@@ -1,4 +1,5 @@
 using AdvancedLib;
+using AdvancedLib.Serialize;
 using AdvancedLib.Types;
 using System.Diagnostics;
 using System.Drawing.Imaging;
@@ -10,6 +11,7 @@ namespace MKSCTrackImporter
     public partial class Form1 : Form
     {
         private Manager manager;
+        private Track selectedTrack;
 
         public Form1()
         {
@@ -66,11 +68,10 @@ namespace MKSCTrackImporter
                 return;
             }
             var trackName = String.Join("", trackNames[trackSelector.SelectedIndex].Split(' '));
-            var track = manager.trackManager.tracks[trackSelector.SelectedIndex];
-            var trackSize = track.trackWidth * 128;
+            var trackSize = selectedTrack.trackWidth * 128;
             string csvData = string.Join("\n", Enumerable.Range(0, trackSize)
                 .Select(y => string.Join(",", Enumerable.Range(0, trackSize)
-                    .Select(x => (track.layout.indicies[x + y * trackSize] + 1).ToString())) + ","));
+                    .Select(x => (selectedTrack.layout.indicies[x + y * trackSize] + 1).ToString())) + ","));
 
             // Comments for when I forget what goes wrong later:
             // nextlayerid may change if I add more layers (highest layer +1)
@@ -133,7 +134,6 @@ namespace MKSCTrackImporter
                 return;
             }
             var trackName = String.Join("", trackNames[trackSelector.SelectedIndex].Split(' '));
-            var track = manager.trackManager.tracks[trackSelector.SelectedIndex];
 
             Bitmap image = new Bitmap(16 * 8, 16 * 8, PixelFormat.Format8bppIndexed);
 
@@ -146,27 +146,47 @@ namespace MKSCTrackImporter
             byte[] pixelData = new byte[bytes];
 
             Marshal.Copy(ptr, pixelData, 0, bytes);
-            for (int y = 0; y < 16; y++)
+            if (selectedTrack.tilesetLookback == 0)
             {
-                for (int x = 0; x < 16; x++)
+                for (int y = 0; y < 16; y++)
                 {
-                    for (int i = 0; i < 8; i++)
+                    for (int x = 0; x < 16; x++)
                     {
-                        for (int j = 0; j < 8; j++)
+                        for (int i = 0; i < 8; i++)
                         {
-                            pixelData[(y*8+i) * stride + (x*8+j)] = track.tileset.tiles[y * 16 + x].indicies[j,i];
+                            for (int j = 0; j < 8; j++)
+                            {
+                                pixelData[(y * 8 + i) * stride + (x * 8 + j)] = selectedTrack.tileset.tiles[y * 16 + x].indicies[j, i];
+                            }
+                        }
+                    }
+                }
+            } else
+            {
+                var lookbackTrack = manager.trackManager.tracks[trackSelector.SelectedIndex + selectedTrack.tilesetLookback];
+                for (int y = 0; y < 16; y++)
+                {
+                    for (int x = 0; x < 16; x++)
+                    {
+                        for (int i = 0; i < 8; i++)
+                        {
+                            for (int j = 0; j < 8; j++)
+                            {
+                                pixelData[(y * 8 + i) * stride + (x * 8 + j)] = lookbackTrack.tileset.tiles[y * 16 + x].indicies[j, i];
+                            }
                         }
                     }
                 }
             }
+            
             Marshal.Copy(pixelData, 0, ptr, bytes);
             image.UnlockBits(bmpData);
             var pal = image.Palette;
-            for (int i = 0; i < track.palette.paletteLength; i++)
+            for (int i = 0; i < selectedTrack.palette.paletteLength; i++)
             {
-                pal.Entries[i] = track.palette[i].ToColor();
+                pal.Entries[i] = selectedTrack.palette[i].ToColor();
             }
-            for (int i = track.palette.paletteLength; i<256; i++)
+            for (int i = selectedTrack.palette.paletteLength; i < 256; i++)
             {
                 pal.Entries[i] = Color.Black;
             }
@@ -219,14 +239,15 @@ namespace MKSCTrackImporter
                     new XAttribute("source", trackName + ".png"), new XAttribute("width", "128"), new XAttribute("height", "128")
                 )
             );
-            for (int i = 0; i < 256; i++) {
+            for (int i = 0; i < 256; i++)
+            {
                 tilesetData.Add(
-                    new XElement("tile", new XAttribute("id",i.ToString()),
+                    new XElement("tile", new XAttribute("id", i.ToString()),
                         new XElement("properties",
                             new XElement("property",
                                 new XAttribute("name", "behavior"),
                                 new XAttribute("type", "int"),
-                                new XAttribute("value", track.tileBehaviors[i])
+                                new XAttribute("value", selectedTrack.tileBehaviors[i])
                             )
                         )
                     )
@@ -306,7 +327,7 @@ namespace MKSCTrackImporter
                              select layer).First();
                         var split = data.Value.Split(',');
                         byte[] trackData = split.Take(split.Length - 1).Select(s => (byte)(int.Parse(s) - 1)).ToArray(); // Convert CSV to byte array
-                        manager.trackManager.tracks[trackSelector.SelectedIndex].layout.indicies = trackData;
+                        selectedTrack.layout.indicies = trackData;
                     }
                 }
                 catch (Exception ex)
@@ -331,14 +352,14 @@ namespace MKSCTrackImporter
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
                 XDocument tilesetDoc = XDocument.Load(openFileDialog.FileName);
-                
+
                 var tilesetPath = Path.Combine(Path.GetDirectoryName(openFileDialog.FileName), tilesetDoc.Root.Element("image").Attribute("source").Value);
 
                 byte[] behaviors =
                     (from element in tilesetDoc.Root.Elements("tile")
-                    select byte.Parse(element.Element("properties").Elements("property").Where(x => x.Attribute("name").Value == "behavior")
-                    .First().Attribute("value").Value)).ToArray();
-                manager.trackManager.tracks[trackSelector.SelectedIndex].tileBehaviors = behaviors;
+                     select byte.Parse(element.Element("properties").Elements("property").Where(x => x.Attribute("name").Value == "behavior")
+                     .First().Attribute("value").Value)).ToArray();
+                selectedTrack.tileBehaviors = behaviors;
 
                 Bitmap tileset = (Bitmap)Image.FromFile(tilesetPath);
 
@@ -364,7 +385,7 @@ namespace MKSCTrackImporter
                 {
                     for (int x = 0; x < 16; x++)
                     {
-                        byte[,] indicies = new byte[8,8];
+                        byte[,] indicies = new byte[8, 8];
                         for (int i = 0; i < 8; i++)
                         {
                             for (int j = 0; j < 8; j++)
@@ -375,14 +396,15 @@ namespace MKSCTrackImporter
                         tiles[y * 16 + x] = new Tile(indicies);
                     }
                 }
-                manager.trackManager.tracks[trackSelector.SelectedIndex].tileset.tiles = tiles;
+                selectedTrack.tileset.tiles = tiles;
                 BgrColor[] pal = new BgrColor[64];
-                for (int i = 0; i < 64; i++) {
+                for (int i = 0; i < 64; i++)
+                {
                     var color = tileset.Palette.Entries[i];
-                    pal[i] = new BgrColor(color.R,color.G,color.B);
+                    pal[i] = new BgrColor(color.R, color.G, color.B);
                 }
 
-                manager.trackManager.tracks[trackSelector.SelectedIndex].palette.palette = pal;
+                selectedTrack.palette.palette = pal;
             }
         }
 
@@ -398,6 +420,46 @@ namespace MKSCTrackImporter
                 MessageBox.Show($"Error saving game: {ex}", "Save Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
+        }
+        private void trackSelector_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (trackSelector.SelectedIndex == 20 ||
+                trackSelector.SelectedIndex == 21 ||
+                trackSelector.SelectedIndex == 22 ||
+                trackSelector.SelectedIndex == 23 ||
+                trackSelector.SelectedIndex == -1
+                )
+            {
+                trackSelector.SelectedIndex = -1;
+                return;
+            }
+            selectedTrack = manager.trackManager.tracks[trackSelector.SelectedIndex];
+
+            checkBox1.Enabled = false;
+            if (selectedTrack.tilesetLookback == 0)
+            {
+                tilesetImport.Enabled = true;
+                checkBox1.Checked = false;
+                comboBox1.Enabled = checkBox1.Checked;
+                comboBox1.SelectedIndex = 0;
+            }
+            else
+            {
+                tilesetImport.Enabled = false;
+                checkBox1.Checked = true;
+                comboBox1.Enabled = checkBox1.Checked;
+                comboBox1.SelectedIndex = trackSelector.SelectedIndex + selectedTrack.tilesetLookback;
+            }
+        }
+
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (trackSelector.SelectedIndex < 0)
+            {
+                MessageBox.Show("No Track Selected", "Please Select a track", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            selectedTrack.tilesetLookback = (sbyte)(comboBox1.SelectedIndex - trackSelector.SelectedIndex);
         }
     }
 }

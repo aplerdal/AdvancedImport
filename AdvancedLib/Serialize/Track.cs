@@ -22,7 +22,7 @@ public class Track : BinarySerializable
     public ushort trackType { get; set; }
     public byte trackWidth { get; set; }
     public byte trackHeight { get; set; }
-    public uint tilesetLookback { get; set; }
+    public sbyte tilesetLookback { get; set; }
     public Pointer layoutPointer { get; set; }
     public Layout layout { get; set; }
     public Pointer tilesetPartsPointer { get; set; }
@@ -83,13 +83,13 @@ public class Track : BinarySerializable
 
         unk0 = s.SerializeArray(unk0, 42, "Padding - unk");
         //s.SerializePadding(42);
-        
-        tilesetLookback = s.Serialize<uint>(
+
+        tilesetLookback = s.Serialize<sbyte>(
             tilesetLookback,
             nameof(tilesetLookback)
         );
 
-        unk1 = s.SerializeArray(unk1, 12, "Padding - unk");
+        unk1 = s.SerializeArray(unk1, 15, "Padding - unk"); // 12 + 3 for extra space from sbyte
         //s.SerializePadding(12);
 
         layoutPointer = s.SerializePointer(
@@ -215,10 +215,18 @@ public class Track : BinarySerializable
             s.Goto(tilesetPartsPointer);
             tileset = s.SerializeObject<Tileset>(
                 tileset,
+                onPreSerialize: x => x.lookback = false,
                 name: nameof(tileset)
             );
         }
-        else { }
+        else {
+            s.Goto(tilesetPartsPointer);
+            tileset = s.SerializeObject<Tileset>(
+                tileset,
+                onPreSerialize: x => x.lookback = true,
+                name: nameof(tileset)
+            );
+        }
 
         s.Goto(minimapPointer);
         minimap = s.SerializeObject<Minimap>(
