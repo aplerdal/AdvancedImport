@@ -112,13 +112,13 @@ namespace MKSCTrackImporter
                 new XElement("objectgroup", new XAttribute("id", "2"), new XAttribute("name", "AI Zones")
 
                 ),
-                new XElement("objectgroup", new XAttribute("id", "2"), new XAttribute("name", "AI Targets set 1")
+                new XElement("objectgroup", new XAttribute("id", "3"), new XAttribute("name", "AI Targets set 1")
 
                 ),
-                new XElement("objectgroup", new XAttribute("id", "2"), new XAttribute("name", "AI Targets set 2")
+                new XElement("objectgroup", new XAttribute("id", "4"), new XAttribute("name", "AI Targets set 2")
 
                 ),
-                new XElement("objectgroup", new XAttribute("id", "2"), new XAttribute("name", "AI Targets set 3")
+                new XElement("objectgroup", new XAttribute("id", "5"), new XAttribute("name", "AI Targets set 3")
 
                 )
             );
