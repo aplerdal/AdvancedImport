@@ -86,6 +86,8 @@
             button1 = new Button();
             labelRomOpened = new Label();
             editorPanel = new Panel();
+            label4 = new Label();
+            button3 = new Button();
             comboBox1 = new ComboBox();
             checkBox1 = new CheckBox();
             tilesetImport = new Button();
@@ -98,6 +100,7 @@
             trackSelector = new ComboBox();
             saveButton = new Button();
             toolTip1 = new ToolTip(components);
+            label5 = new Label();
             editorPanel.SuspendLayout();
             SuspendLayout();
             // 
@@ -133,6 +136,9 @@
             // editorPanel
             // 
             editorPanel.BorderStyle = BorderStyle.FixedSingle;
+            editorPanel.Controls.Add(label5);
+            editorPanel.Controls.Add(label4);
+            editorPanel.Controls.Add(button3);
             editorPanel.Controls.Add(comboBox1);
             editorPanel.Controls.Add(checkBox1);
             editorPanel.Controls.Add(tilesetImport);
@@ -148,6 +154,25 @@
             editorPanel.Name = "editorPanel";
             editorPanel.Size = new Size(776, 397);
             editorPanel.TabIndex = 2;
+            // 
+            // label4
+            // 
+            label4.AutoSize = true;
+            label4.Location = new Point(9, 103);
+            label4.Name = "label4";
+            label4.Size = new Size(44, 15);
+            label4.TabIndex = 9;
+            label4.Text = "Project";
+            // 
+            // button3
+            // 
+            button3.Location = new Point(64, 99);
+            button3.Name = "button3";
+            button3.Size = new Size(110, 23);
+            button3.TabIndex = 8;
+            button3.Text = "Export";
+            button3.UseVisualStyleBackColor = true;
+            button3.Click += button3_Click;
             // 
             // comboBox1
             // 
@@ -260,6 +285,15 @@
             saveButton.UseVisualStyleBackColor = true;
             saveButton.Click += saveButton_Click;
             // 
+            // label5
+            // 
+            label5.AutoSize = true;
+            label5.Location = new Point(180, 103);
+            label5.Name = "label5";
+            label5.Size = new Size(388, 15);
+            label5.TabIndex = 10;
+            label5.Text = "Adds extra editing features to tiled to make the experience editing better";
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -296,5 +330,8 @@
         private CheckBox checkBox1;
         private ComboBox comboBox1;
         private ToolTip toolTip1;
+        private Label label4;
+        private Button button3;
+        private Label label5;
     }
 }

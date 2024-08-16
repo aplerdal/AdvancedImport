@@ -13,7 +13,11 @@ public class Manager
 {
     LinearFile file;
 
-    Context context = new Context(""/*, serializerLogger: new FileSerializerLogger("C:\\Users\\apler\\Downloads\\Log.txt")*/);
+    Context context = new Context(""
+#if DEBUG
+        , serializerLogger: new FileSerializerLogger("C:\\Users\\apler\\Downloads\\Log.txt")
+#endif
+    );
 
     public static Region region;
     private string path { get; set;  }

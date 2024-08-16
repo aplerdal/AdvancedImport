@@ -10,25 +10,35 @@ namespace AdvancedLib.Serialize
 {
     public class GameObjectGroup : BinarySerializable
     {
-        public GameObject[] gameObject;
+        public GameObject[] GameObjects { get; set; }
         public override void SerializeImpl(SerializerObject s)
         {
-            gameObject = s.SerializeObjectArrayUntil(gameObject, x => (x.id | x.xPosition | x.yPosition | x.zone) == 0, name: nameof(gameObject));
+            GameObjects = s.SerializeObjectArrayUntil(GameObjects, o => (o.Id | o.X | o.Y | o.Zone) == 0, name: nameof(GameObjects));
+            if (GameObjects.Length > 0)
+                if (GameObjects.Last().Id == 0)
+                    GameObjects = GameObjects[0..(GameObjects.Length - 1)];
         }
     }
     public class GameObject : BinarySerializable
     {
-        public byte id;
-        public byte xPosition;
-        public byte yPosition;
-        public byte zone;
-
+        public byte Id;
+        public byte X;
+        public byte Y;
+        public byte Zone;
+        public GameObject() { }
+        public GameObject(byte id, byte x, byte y, byte zone)
+        {
+            Id = id;
+            X = x;
+            Y = y;
+            Zone = zone;
+        }
         public override void SerializeImpl(SerializerObject s)
         {
-            id = s.Serialize(id, nameof(id));
-            xPosition = s.Serialize(xPosition, nameof(id));
-            yPosition = s.Serialize(yPosition, nameof(id));
-            zone = s.Serialize(zone, nameof(id));
+            Id = s.Serialize(Id, nameof(Id));
+            X = s.Serialize(X, nameof(Id));
+            Y = s.Serialize(Y, nameof(Id));
+            Zone = s.Serialize(Zone, nameof(Id));
         }
     }
 }

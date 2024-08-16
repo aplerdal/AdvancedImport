@@ -1,0 +1,72 @@
+{
+    "automappingRulesFile": "",
+    "commands": [
+    ],
+    "compatibilityVersion": 1100,
+    "extensionsPath": "extensions",
+    "folders": [
+        "."
+    ],
+    "properties": [
+    ],
+    "propertyTypes": [
+        {
+            "id": 1,
+            "name": "Shape",
+            "storageType": "int",
+            "type": "enum",
+            "values": [
+                "Rectangle",
+                "Triangle, corner in upper left",
+                "Triangle, corner in upper right",
+                "Triangle, corner in bottom left",
+                "Triangle, corner in bottom right"
+            ],
+            "valuesAsFlags": false
+        },
+        {
+            "color": "#ff634cbf",
+            "drawFill": true,
+            "id": 4,
+            "members": [
+                {
+                    "name": "intersection",
+                    "type": "bool",
+                    "value": false
+                },
+                {
+                    "name": "speed",
+                    "type": "int",
+                    "value": 0
+                }
+            ],
+            "name": "Target",
+            "type": "class",
+            "useAs": [
+                "property",
+                "object",
+                "project"
+            ]
+        },
+        {
+            "color": "#ff876ab1",
+            "drawFill": true,
+            "id": 3,
+            "members": [
+                {
+                    "name": "Zone Shape",
+                    "propertyType": "Shape",
+                    "type": "int",
+                    "value": 0
+                }
+            ],
+            "name": "Zone",
+            "type": "class",
+            "useAs": [
+                "property",
+                "object",
+                "project"
+            ]
+        }
+    ]
+}

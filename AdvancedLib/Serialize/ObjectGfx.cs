@@ -10,33 +10,6 @@ namespace AdvancedLib.Serialize
 {
     public class ObjectGfx : BinarySerializable
     {
-        /*public byte[] indicies
-        {
-            get
-            {
-                return data.;
-            }
-            set
-            {
-                data.data = value;
-            }
-        }
-        public byte[,] indicies2d
-        {
-            get
-            {
-                // sqrt(indicies.Length) = 256
-                byte[,] temp = new byte[8 * 8, 8 * 8];
-                Buffer.BlockCopy(indicies, 0, temp, 0, 8 * 8 * 64 * sizeof(byte));
-                return temp;
-            }
-            set
-            {
-                if (value.Length != 8 * 8 * 64) throw new Exception("Bad input array!");
-                Buffer.BlockCopy(value, 0, indicies, 0, 8 * 8 * 64 * sizeof(byte));
-            }
-        }*/
-
         public Tile4[] tiles { get => tileObject.data; set => tileObject.data = value; }
         public CompressedObjectBlock<Tile4> tileObject;
         public ushort objectLength { get; set; }
@@ -54,32 +27,6 @@ namespace AdvancedLib.Serialize
     }
     public class MultiObjectGfx : BinarySerializable
     {
-        /*public byte[] indicies
-        {
-            get
-            {
-                return data.;
-            }
-            set
-            {
-                data.data = value;
-            }
-        }
-        public byte[,] indicies2d
-        {
-            get
-            {
-                // sqrt(indicies.Length) = 256
-                byte[,] temp = new byte[8 * 8, 8 * 8];
-                Buffer.BlockCopy(indicies, 0, temp, 0, 8 * 8 * 64 * sizeof(byte));
-                return temp;
-            }
-            set
-            {
-                if (value.Length != 8 * 8 * 64) throw new Exception("Bad input array!");
-                Buffer.BlockCopy(value, 0, indicies, 0, 8 * 8 * 64 * sizeof(byte));
-            }
-        }*/
 
         public CompressedObjectBlock<Tile4>[] tileObjects;
         public Pointer[] objectPointers { get; set; }
@@ -91,6 +38,7 @@ namespace AdvancedLib.Serialize
             
             // Assume 2 because im dumb and every track has 2
             objectPointers = s.SerializePointerArray(objectPointers, 2, PointerSize.Pointer16, basePointer, name: nameof(objectPointers));
+            s.SerializePadding(28); //fix?
             
             // This was removing every element when I wrote back
             //objectPointers = objectPointers[0..(objectPointers.Length - 1)]; // Remove empty array element

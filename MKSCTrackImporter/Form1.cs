@@ -3,6 +3,7 @@ using AdvancedLib.Serialize;
 using AdvancedLib.Types;
 using System.Diagnostics;
 using System.Drawing.Imaging;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Xml.Linq;
 
@@ -28,9 +29,12 @@ namespace MKSCTrackImporter
 
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
+#if !DEBUG
                 try
                 {
-                    manager.Open(openFileDialog.FileName);
+#endif
+                manager.Open(openFileDialog.FileName);
+#if !DEBUG
                 }
                 catch (Exception ex)
                 {
@@ -38,13 +42,18 @@ namespace MKSCTrackImporter
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                     labelRomOpened.Text = "ROM not loaded";
                     labelRomOpened.ForeColor = Color.Maroon;
+
                     return;
                 }
+#endif
                 labelRomOpened.Text = "Deserializing ROM";
                 labelRomOpened.ForeColor = Color.Orange;
+#if !DEBUG
                 try
                 {
-                    manager.Deserialize();
+#endif
+                manager.Deserialize();
+#if !DEBUG
                 }
                 catch (Exception ex)
                 {
@@ -52,8 +61,10 @@ namespace MKSCTrackImporter
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                     labelRomOpened.Text = "ROM not loaded";
                     labelRomOpened.ForeColor = Color.Maroon;
+
                     return;
                 }
+#endif
                 labelRomOpened.Text = "Loaded Sucessfully";
                 labelRomOpened.ForeColor = Color.DarkGreen;
                 editorPanel.Enabled = true;
@@ -62,20 +73,26 @@ namespace MKSCTrackImporter
 
         private void tilemapExport_Click(object sender, EventArgs e)
         {
+            #region Track selected check
             if (trackSelector.SelectedIndex < 0)
             {
                 MessageBox.Show("No Track Selected", "Please Select a track", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+            #endregion
+
+            #region Extract track data
             var trackName = String.Join("", trackNames[trackSelector.SelectedIndex].Split(' '));
-            var trackSize = selectedTrack.trackWidth * 128;
+            var trackSize = selectedTrack.TrackWidth * 128;
             string csvData = string.Join("\n", Enumerable.Range(0, trackSize)
                 .Select(y => string.Join(",", Enumerable.Range(0, trackSize)
-                    .Select(x => (selectedTrack.layout.indicies[x + y * trackSize] + 1).ToString())) + ","));
-
+                    .Select(x => (selectedTrack.Layout.indicies[x + y * trackSize] + 1).ToString())) + ","));
+            #endregion
             // Comments for when I forget what goes wrong later:
             // nextlayerid may change if I add more layers (highest layer +1)
             // next objectid might do stuff (highest obj +1)
+            #region XML Layout
+            int objID = 1;
             XElement tilemapData = new XElement("map",
                 new XAttribute("version", "1.10"), new XAttribute("tiledversion", "1.11.0"), new XAttribute("orientation", "orthogonal"), new XAttribute("renderorder", "right-down"),
                 new XAttribute("width", $"{trackSize}"), new XAttribute("height", $"{trackSize}"),
@@ -88,8 +105,221 @@ namespace MKSCTrackImporter
                     new XElement("data", new XAttribute("encoding", "csv"),
                         csvData
                     )
+                ),
+                new XElement("objectgroup", new XAttribute("id", "1"), new XAttribute("name", "Start Line")
+
+                ),
+                new XElement("objectgroup", new XAttribute("id", "2"), new XAttribute("name", "AI Zones")
+
+                ),
+                new XElement("objectgroup", new XAttribute("id", "2"), new XAttribute("name", "AI Targets set 1")
+
+                ),
+                new XElement("objectgroup", new XAttribute("id", "2"), new XAttribute("name", "AI Targets set 2")
+
+                ),
+                new XElement("objectgroup", new XAttribute("id", "2"), new XAttribute("name", "AI Targets set 3")
+
                 )
             );
+            #endregion
+            #region Start line
+            var startLineGroup = tilemapData.Elements("objectgroup").First(o => o.Attribute("name").Value == "Start Line");
+            string[] names = {
+                "1st start position",
+                "2nd start position",
+                "3rd start position",
+                "4th start position",
+                "5th start position",
+                "6th start position",
+                "7th start position",
+                "8th start position",
+                "Multi-pak 1st start position",
+                "Multi-pak 2nd start position",
+                "Finish line top left",
+            };
+            foreach (GameObject o in selectedTrack.FinishLine.GameObjects)
+            {
+                startLineGroup.Add(
+                    new XElement("object", new XAttribute("id", objID++),
+                        new XAttribute("x", o.X * 8),
+                        new XAttribute("y", o.Y * 8),
+                        new XElement("properties",
+                            new XElement("property",
+                                new XAttribute("name", "type"),
+                                new XAttribute("type", "int"),
+                                new XAttribute("value", o.Id)
+                            ),
+                            new XElement("property",
+                                new XAttribute("name", "zone"),
+                                new XAttribute("type", "int"),
+                                new XAttribute("value", o.Zone)
+                            ),
+                            new XElement("property",
+                                new XAttribute("name", "name"),
+                                new XAttribute("type", "string"),
+                                new XAttribute("value", names[o.Id - 0x81])
+                            )
+                        ),
+                        new XElement("point")
+                    )
+                );
+            }
+            #endregion
+            #region AI
+            var zonesGroup = tilemapData.Elements("objectgroup").First(o => o.Attribute("name").Value == "AI Zones");
+            var targetsGroup1 = tilemapData.Elements("objectgroup").First(o => o.Attribute("name").Value == "AI Targets set 1");
+            var targetsGroup2 = tilemapData.Elements("objectgroup").First(o => o.Attribute("name").Value == "AI Targets set 2");
+            var targetsGroup3 = tilemapData.Elements("objectgroup").First(o => o.Attribute("name").Value == "AI Targets set 3");
+            int targetCount = 512;
+
+            for (int i = 0; i < selectedTrack.TrackAI.Targets.Length/3; i++)
+            {
+                AiTarget o = selectedTrack.TrackAI.Targets[i];
+                targetsGroup1.Add(
+                    new XElement("object", new XAttribute("id", targetCount++),
+                        new XAttribute("type", "Target"),
+                        new XAttribute("x", o.X * 8),
+                        new XAttribute("y", o.Y * 8),
+                        new XElement("properties",
+                            new XElement("property",
+                                new XAttribute("name", "intersection"),
+                                new XAttribute("type", "bool"),
+                                new XAttribute("value", (o.Intersection == 0) ? "true" : "false")
+                            ),
+                            new XElement("property",
+                                new XAttribute("name", "speed"),
+                                new XAttribute("type", "int"),
+                                new XAttribute("value", o.Speed)
+                            )
+                        ),
+                        new XElement("point")
+                    )
+                );
+            }
+            for (int i = selectedTrack.TrackAI.Targets.Length / 3; i < 2 * (selectedTrack.TrackAI.Targets.Length / 3); i++)
+            {
+                AiTarget o = selectedTrack.TrackAI.Targets[i];
+                targetsGroup2.Add(
+                    new XElement("object", new XAttribute("id", targetCount++),
+                        new XAttribute("type", "Target"),
+                        new XAttribute("x", o.X * 8),
+                        new XAttribute("y", o.Y * 8),
+                        new XElement("properties",
+                            new XElement("property",
+                                new XAttribute("name", "intersection"),
+                                new XAttribute("type", "bool"),
+                                new XAttribute("value", (o.Intersection == 0) ? "true" : "false")
+                            ),
+                            new XElement("property",
+                                new XAttribute("name", "speed"),
+                                new XAttribute("type", "int"),
+                                new XAttribute("value", o.Speed)
+                            )
+                        ),
+                        new XElement("point")
+                    )
+                );
+            }
+            for (int i = 2 * (selectedTrack.TrackAI.Targets.Length / 3); i < selectedTrack.TrackAI.Targets.Length; i++)
+            {
+                AiTarget o = selectedTrack.TrackAI.Targets[i];
+                targetsGroup3.Add(
+                    new XElement("object", new XAttribute("id", targetCount++),
+                        new XAttribute("type", "Target"),
+                        new XAttribute("x", o.X * 8),
+                        new XAttribute("y", o.Y * 8),
+                        new XElement("properties",
+                            new XElement("property",
+                                new XAttribute("name", "intersection"),
+                                new XAttribute("type", "bool"),
+                                new XAttribute("value", (o.Intersection == 0) ? "true" : "false")
+                            ),
+                            new XElement("property",
+                                new XAttribute("name", "speed"),
+                                new XAttribute("type", "int"),
+                                new XAttribute("value", o.Speed)
+                            )
+                        ),
+                        new XElement("point")
+                    )
+                );
+            }
+            
+            int zoneCount = 1024;
+            foreach (AiZone o in selectedTrack.TrackAI.Zones)
+            {
+                string points = "";
+                switch (o.Shape)
+                {
+                    case 1:
+                        points = $"0,0 {o.Width * 8},0 0,{o.Width * 8}";
+                        break;
+                    case 2:
+                        points = $"0,0 {-o.Width * 8},0 0,{o.Width * 8}";
+                        break;
+                    case 4:
+                        points = $"0,0 {o.Width * 8},0 0,{-o.Width * 8}";
+                        break;
+                    case 3:
+                        points = $"0,0 {-o.Width * 8},0 0,{-o.Width * 8}";
+                        break;
+                    default: break;
+
+                }
+                if (o.Shape == 0)
+                {
+                    zonesGroup.Add(
+                        new XElement("object", new XAttribute("id", zoneCount++),
+                            new XAttribute("type", "Zone"),
+                            new XAttribute("x", o.X * 8),
+                            new XAttribute("y", o.Y * 8),
+                            new XAttribute("width", o.Width * 8),
+                            new XAttribute("height", o.Height * 8),
+                            new XElement("properties",
+                                new XElement("property",
+                                    new XAttribute("name", "Zone Shape"),
+                                    new XAttribute("propertytype", "Shape"),
+                                    new XAttribute("type", "int"),
+                                    new XAttribute("value", o.Shape)
+                                ),
+                                new XElement("property",
+                                    new XAttribute("name", "DISPLAY ONLY TARGET"),
+                                    new XAttribute("type", "object"),
+                                    new XAttribute("value", zoneCount-512)
+                                )
+                            )
+                        )
+                    );
+                } else
+                {
+                    zonesGroup.Add(
+                        new XElement("object", new XAttribute("id", zoneCount++),
+                            new XAttribute("type", "Zone"),
+                            new XAttribute("x", o.X * 8),
+                            new XAttribute("y", o.Y * 8),
+                            new XElement("polygon",
+                                new XAttribute("points", points)),
+                            new XElement("properties",
+                                new XElement("property",
+                                    new XAttribute("name", "Zone Shape"),
+                                    new XAttribute("propertytype", "Shape"),
+                                    new XAttribute("type", "int"),
+                                    new XAttribute("value", o.Shape)
+                                ),
+                                new XElement("property",
+                                    new XAttribute("name", "DISPLAY ONLY TARGET"),
+                                    new XAttribute("type", "object"),
+                                    new XAttribute("value", zoneCount - 512)
+                                )
+                            )
+                        )
+                    );
+                }
+                
+            }
+        #endregion
+        #region Saving
         SaveFile:
             saveFileDialog.DefaultExt = "tmx";
             saveFileDialog.Filter = "TMX Files|*.tmx|All Files|*.*";
@@ -124,15 +354,18 @@ namespace MKSCTrackImporter
                 }
             }
             MessageBox.Show("Sucessfully exported tilemap", "Sucess", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            #endregion
         }
 
         private void tilesetExport_Click(object sender, EventArgs e)
         {
+            #region Track selected check
             if (trackSelector.SelectedIndex < 0)
             {
                 MessageBox.Show("No Track Selected", "Please Select a track", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+            #endregion
             var trackName = String.Join("", trackNames[trackSelector.SelectedIndex].Split(' '));
 
             Bitmap image = new Bitmap(16 * 8, 16 * 8, PixelFormat.Format8bppIndexed);
@@ -146,7 +379,7 @@ namespace MKSCTrackImporter
             byte[] pixelData = new byte[bytes];
 
             Marshal.Copy(ptr, pixelData, 0, bytes);
-            if (selectedTrack.tilesetLookback == 0)
+            if (selectedTrack.TilesetLookback == 0)
             {
                 for (int y = 0; y < 16; y++)
                 {
@@ -156,37 +389,38 @@ namespace MKSCTrackImporter
                         {
                             for (int j = 0; j < 8; j++)
                             {
-                                pixelData[(y * 8 + i) * stride + (x * 8 + j)] = selectedTrack.tileset.tiles[y * 16 + x].indicies[j, i];
-                            }
-                        }
-                    }
-                }
-            } else
-            {
-                var lookbackTrack = manager.trackManager.tracks[trackSelector.SelectedIndex + selectedTrack.tilesetLookback];
-                for (int y = 0; y < 16; y++)
-                {
-                    for (int x = 0; x < 16; x++)
-                    {
-                        for (int i = 0; i < 8; i++)
-                        {
-                            for (int j = 0; j < 8; j++)
-                            {
-                                pixelData[(y * 8 + i) * stride + (x * 8 + j)] = lookbackTrack.tileset.tiles[y * 16 + x].indicies[j, i];
+                                pixelData[(y * 8 + i) * stride + (x * 8 + j)] = selectedTrack.Tileset.tiles[y * 16 + x].indicies[j, i];
                             }
                         }
                     }
                 }
             }
-            
+            else
+            {
+                var lookbackTrack = manager.trackManager.tracks[trackSelector.SelectedIndex + selectedTrack.TilesetLookback];
+                for (int y = 0; y < 16; y++)
+                {
+                    for (int x = 0; x < 16; x++)
+                    {
+                        for (int i = 0; i < 8; i++)
+                        {
+                            for (int j = 0; j < 8; j++)
+                            {
+                                pixelData[(y * 8 + i) * stride + (x * 8 + j)] = lookbackTrack.Tileset.tiles[y * 16 + x].indicies[j, i];
+                            }
+                        }
+                    }
+                }
+            }
+
             Marshal.Copy(pixelData, 0, ptr, bytes);
             image.UnlockBits(bmpData);
             var pal = image.Palette;
-            for (int i = 0; i < selectedTrack.palette.paletteLength; i++)
+            for (int i = 0; i < selectedTrack.Palette.paletteLength; i++)
             {
-                pal.Entries[i] = selectedTrack.palette[i].ToColor();
+                pal.Entries[i] = selectedTrack.Palette[i].ToColor();
             }
-            for (int i = selectedTrack.palette.paletteLength; i < 256; i++)
+            for (int i = selectedTrack.Palette.paletteLength; i < 256; i++)
             {
                 pal.Entries[i] = Color.Black;
             }
@@ -247,7 +481,7 @@ namespace MKSCTrackImporter
                             new XElement("property",
                                 new XAttribute("name", "behavior"),
                                 new XAttribute("type", "int"),
-                                new XAttribute("value", selectedTrack.tileBehaviors[i])
+                                new XAttribute("value", selectedTrack.TileBehaviors[i])
                             )
                         )
                     )
@@ -286,12 +520,14 @@ namespace MKSCTrackImporter
 
         private void tilemapImport_Click(object sender, EventArgs e)
         {
+            #region Track selected check
             if (trackSelector.SelectedIndex < 0)
             {
                 MessageBox.Show("No Track Selected", "Please Select a track",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+            #endregion
             openFileDialog.Filter = "TMX Files|*.tmx|All Files|*.*";
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
@@ -304,6 +540,9 @@ namespace MKSCTrackImporter
                 {
                     MessageBox.Show($"{ex.ToString()}", "Error reading file",
                         MessageBoxButtons.OK, MessageBoxIcon.Error);
+#if DEBUG
+                    throw;
+#endif
                     return;
                 }
                 XElement? root = tilemap.Root;
@@ -317,23 +556,31 @@ namespace MKSCTrackImporter
                         && (root.Attribute("infinite").Value == "0")
                         )
                     {
-                        XElement tilemapLayer =
-                            (from layer in root.Descendants("layer")
-                             where (layer.Attribute("name").Value == "Tilemap")
-                             select layer).First();
-                        XElement data =
-                            (from layer in root.Descendants("data")
-                             where (layer.Attribute("encoding").Value == "csv")
-                             select layer).First();
+                        XElement tilemapLayer = root.Descendants("layer").First(o => o.Attribute("name").Value == "Tilemap");
+                        XElement data = root.Descendants("data").First(o => o.Attribute("encoding").Value == "csv");
+                        XElement startPositions = root.Descendants("objectgroup").First(o => o.Attribute("name").Value == "Start Line");
                         var split = data.Value.Split(',');
                         byte[] trackData = split.Take(split.Length - 1).Select(s => (byte)(int.Parse(s) - 1)).ToArray(); // Convert CSV to byte array
-                        selectedTrack.layout.indicies = trackData;
+                        selectedTrack.Layout.indicies = trackData;
+
+                        GameObject[] gameObjectData = (
+                            from o in startPositions.Elements("object").Select(o => o.Element("properties"))
+                            select new GameObject(
+                                Byte.Parse(o.Elements("property").First(p => p.Attribute("name").Value == "type").Attribute("value").Value),
+                                (byte)(Int32.Parse(o.Parent.Attribute("x").Value) / 8),
+                                (byte)(Int32.Parse(o.Parent.Attribute("y").Value) / 8),
+                                Byte.Parse(o.Elements("property").First(p => p.Attribute("name").Value == "zone").Attribute("value").Value)
+                            )).ToArray();
+                        selectedTrack.FinishLine.GameObjects = gameObjectData;
                     }
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show($"Error reading track: {ex}", "Error",
                         MessageBoxButtons.OK, MessageBoxIcon.Error);
+#if DEBUG
+                    throw;
+#endif
                     return;
                 }
 #pragma warning restore CS8602
@@ -342,12 +589,15 @@ namespace MKSCTrackImporter
         }
         private void tilesetImport_Click(object sender, EventArgs e)
         {
+            #region Track selected check
             if (trackSelector.SelectedIndex < 0)
             {
                 MessageBox.Show("No Track Selected", "Please Select a track",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+            #endregion
+
             openFileDialog.Filter = "TSX Files|*.tsx;|All Files|*.*";
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
@@ -359,7 +609,7 @@ namespace MKSCTrackImporter
                     (from element in tilesetDoc.Root.Elements("tile")
                      select byte.Parse(element.Element("properties").Elements("property").Where(x => x.Attribute("name").Value == "behavior")
                      .First().Attribute("value").Value)).ToArray();
-                selectedTrack.tileBehaviors = behaviors;
+                selectedTrack.TileBehaviors = behaviors;
 
                 Bitmap tileset = (Bitmap)Image.FromFile(tilesetPath);
 
@@ -396,7 +646,7 @@ namespace MKSCTrackImporter
                         tiles[y * 16 + x] = new Tile(indicies);
                     }
                 }
-                selectedTrack.tileset.tiles = tiles;
+                selectedTrack.Tileset.tiles = tiles;
                 BgrColor[] pal = new BgrColor[64];
                 for (int i = 0; i < 64; i++)
                 {
@@ -404,7 +654,7 @@ namespace MKSCTrackImporter
                     pal[i] = new BgrColor(color.R, color.G, color.B);
                 }
 
-                selectedTrack.palette.palette = pal;
+                selectedTrack.Palette.palette = pal;
             }
         }
 
@@ -418,6 +668,9 @@ namespace MKSCTrackImporter
             catch (Exception ex)
             {
                 MessageBox.Show($"Error saving game: {ex}", "Save Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+#if DEBUG
+                throw;
+#endif
                 return;
             }
         }
@@ -436,7 +689,7 @@ namespace MKSCTrackImporter
             selectedTrack = manager.trackManager.tracks[trackSelector.SelectedIndex];
 
             checkBox1.Enabled = false;
-            if (selectedTrack.tilesetLookback == 0)
+            if (selectedTrack.TilesetLookback == 0)
             {
                 tilesetImport.Enabled = true;
                 checkBox1.Checked = false;
@@ -448,7 +701,7 @@ namespace MKSCTrackImporter
                 tilesetImport.Enabled = false;
                 checkBox1.Checked = true;
                 comboBox1.Enabled = checkBox1.Checked;
-                comboBox1.SelectedIndex = trackSelector.SelectedIndex + selectedTrack.tilesetLookback;
+                comboBox1.SelectedIndex = trackSelector.SelectedIndex + selectedTrack.TilesetLookback;
             }
         }
 
@@ -459,7 +712,45 @@ namespace MKSCTrackImporter
                 MessageBox.Show("No Track Selected", "Please Select a track", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-            selectedTrack.tilesetLookback = (sbyte)(comboBox1.SelectedIndex - trackSelector.SelectedIndex);
+            selectedTrack.TilesetLookback = (sbyte)(comboBox1.SelectedIndex - trackSelector.SelectedIndex);
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+        SaveProject:
+            saveFileDialog.DefaultExt = "tiled-project";
+            saveFileDialog.Filter = "Tiled project files|*.tiled-project|All Files|*.*";
+
+            saveFileDialog.FileName = "mksc.tiled-project";
+            if (saveFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                try
+                {
+                    File.Copy("template.tiled-project", saveFileDialog.FileName);
+                }
+                catch (Exception ex)
+                {
+                    if (MessageBox.Show($"Error exporting project {ex}", "Export Error", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error) == DialogResult.Retry)
+                    {
+                        goto SaveProject;
+                    }
+                    else
+                    {
+                        return;
+                    }
+                }
+            }
+            else
+            {
+                if (MessageBox.Show("Please select a save location", "Export Aborted", MessageBoxButtons.RetryCancel, MessageBoxIcon.Warning) == DialogResult.Retry)
+                {
+                    goto SaveProject;
+                }
+                else
+                {
+                    return;
+                }
+            }
         }
     }
 }

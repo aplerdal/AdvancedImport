@@ -4,18 +4,38 @@ using BinarySerializer;
 namespace AdvancedLib.Serialize;
 
 public class AiZone : BinarySerializable{
-    public byte data1 { get; set; }
-    public ushort data2 { get; set; }
-    public ushort data3 { get; set; }
-    public ushort data4 { get; set; }
-    public ushort data5 { get; set; }
+    public byte Shape { get; set; }
+    public ushort HalfX { get; set; }
+    public ushort HalfY { get; set; }
+    public int X {
+        get => HalfX * 2;
+        set => HalfX = (ushort)(value/2);
+    }
+    public int Y
+    {
+        get => HalfY * 2;
+        set => HalfY = (ushort)(value / 2);
+    }
+    public ushort HalfWidth { get; set; }
+    public ushort HalfHeight {get; set; }
+    public int Width
+    {
+        get => HalfWidth * 2;
+        set => HalfWidth = (ushort)(value / 2);
+    }
+    public int Height
+    {
+        get => HalfHeight * 2;
+        set => HalfHeight = (ushort)(value / 2);
+    }
+    public int DisplayHeight { get => (Shape == 0) ? Height:Width; }
     public override void SerializeImpl(SerializerObject s)
     {
-        data1 = s.Serialize<byte>(data1, nameof(data1)); //shape
-        data2 = s.Serialize<ushort>(data2, nameof(data1)); //xpos
-        data3 = s.Serialize<ushort>(data3, nameof(data1)); //ypos
-        data4 = s.Serialize<ushort>(data4, nameof(data1)); //width
-        data5 = s.Serialize<ushort>(data5, nameof(data1)); //height (0 if triangle)
+        Shape = s.Serialize<byte>(Shape, nameof(Shape)); //shape
+        HalfX = s.Serialize<ushort>(HalfX, nameof(Shape)); //xpos
+        HalfY = s.Serialize<ushort>(HalfY, nameof(Shape)); //ypos
+        HalfWidth = s.Serialize<ushort>(HalfWidth, nameof(Shape)); //width
+        HalfHeight = s.Serialize<ushort>(HalfHeight, nameof(Shape)); //height (0 if triangle)
         s.SerializePadding(3);
     }
 }

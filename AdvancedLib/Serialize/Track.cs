@@ -19,37 +19,37 @@ public class Track : BinarySerializable
     ushort magic;
 
     #region Variables
-    public ushort trackType { get; set; }
-    public byte trackWidth { get; set; }
-    public byte trackHeight { get; set; }
-    public sbyte tilesetLookback { get; set; }
-    public Pointer layoutPointer { get; set; }
-    public Layout layout { get; set; }
-    public Pointer tilesetPartsPointer { get; set; }
-    public Tileset tileset { get; set; }
-    public Pointer palettePointer { get; set; }
-    public AdvancedLib.Types.Palette palette { get; set; }
-    public Pointer tileBehaviorsPointer { get; set; }
-    public byte[] tileBehaviors { get; set; } // TODO implement behaviors type
-    public Pointer gameObjectsPointer { get; set; }
-    public GameObjectGroup gameObjects {get; set;}
-    public Pointer overlayPointer { get; set; }
-    public GameObjectGroup overlay { get; set; }
-    public Pointer itemBoxesPointer { get; set; }
-    public GameObjectGroup itemBoxes { get; set; }
-    public Pointer finishLinePointer { get; set; }
-    public GameObjectGroup finishLine { get; set; }
-    public uint data0 { get; set; }
-    public uint trackRoutine { get; set; }
-    public Pointer minimapPointer { get; set; }
-    public Minimap minimap { get; set; }
-    public Pointer trackAIPointer { get; set; }
-    public TrackAI trackAI { get; set; }
-    public Pointer objectGfxPointer { get; set; }
-    public ObjectGfx? objectGfx { get; set; }
-    public MultiObjectGfx? multiObjectGfx { get; set; }
-    public Pointer objectPalettePointer { get; set; }
-    public AdvancedLib.Types.Palette objectPalette { get; set; }
+    public ushort TrackType { get; set; }
+    public byte TrackWidth { get; set; }
+    public byte TrackHeight { get; set; }
+    public sbyte TilesetLookback { get; set; }
+    public Pointer LayoutPointer { get; set; }
+    public Layout Layout { get; set; }
+    public Pointer TilesetPartsPointer { get; set; }
+    public Tileset Tileset { get; set; }
+    public Pointer PalettePointer { get; set; }
+    public AdvancedLib.Types.Palette Palette { get; set; }
+    public Pointer TileBehaviorsPointer { get; set; }
+    public byte[] TileBehaviors { get; set; } // TODO implement behaviors type
+    public Pointer GameObjectsPointer { get; set; }
+    public GameObjectGroup GameObjects {get; set;}
+    public Pointer OverlayPointer { get; set; }
+    public GameObjectGroup Overlay { get; set; }
+    public Pointer ItemBoxesPointer { get; set; }
+    public GameObjectGroup ItemBoxes { get; set; }
+    public GameObjectGroup FinishLine { get; set; }
+    public Pointer FinishLinePointer { get; set; }
+    private uint data0 { get; set; }
+    public uint TrackRoutine { get; set; }
+    public Pointer MinimapPointer { get; set; }
+    public Minimap Minimap { get; set; }
+    public Pointer TrackAIPointer { get; set; }
+    public TrackAI TrackAI { get; set; }
+    public Pointer ObjectGfxPointer { get; set; }
+    public ObjectGfx? ObjectGfx { get; set; }
+    public MultiObjectGfx? MultiObjectGfx { get; set; }
+    public Pointer ObjectPalettePointer { get; set; }
+    public AdvancedLib.Types.Palette ObjectPalette { get; set; }
 
     private byte[] unk0;
     private byte[] unk1;
@@ -68,81 +68,81 @@ public class Track : BinarySerializable
             magic,
             nameof(magic)
         );
-        trackType = s.Serialize<ushort>(
-            trackType,
-            nameof(trackType)
+        TrackType = s.Serialize<ushort>(
+            TrackType,
+            nameof(TrackType)
         );
-        trackWidth = s.Serialize<byte>(
-            trackWidth,
-            nameof(trackWidth)
+        TrackWidth = s.Serialize<byte>(
+            TrackWidth,
+            nameof(TrackWidth)
         );
-        trackHeight = s.Serialize<byte>(
-            trackHeight,
-            nameof(trackHeight)
+        TrackHeight = s.Serialize<byte>(
+            TrackHeight,
+            nameof(TrackHeight)
         );
 
         unk0 = s.SerializeArray(unk0, 42, "Padding - unk");
         //s.SerializePadding(42);
 
-        tilesetLookback = s.Serialize<sbyte>(
-            tilesetLookback,
-            nameof(tilesetLookback)
+        TilesetLookback = s.Serialize<sbyte>(
+            TilesetLookback,
+            nameof(TilesetLookback)
         );
 
         unk1 = s.SerializeArray(unk1, 15, "Padding - unk"); // 12 + 3 for extra space from sbyte
         //s.SerializePadding(12);
 
-        layoutPointer = s.SerializePointer(
-            layoutPointer,
+        LayoutPointer = s.SerializePointer(
+            LayoutPointer,
             PointerSize.Pointer32,
             basePointer,
-            name: nameof(layoutPointer)
+            name: nameof(LayoutPointer)
         );
 
         unk2 = s.SerializeArray(unk2, 60, "Padding - unk");
         //s.SerializePadding(60);
 
-        tilesetPartsPointer = s.SerializePointer(
-            tilesetPartsPointer,
+        TilesetPartsPointer = s.SerializePointer(
+            TilesetPartsPointer,
             PointerSize.Pointer32,
             basePointer,
-            name: nameof(tilesetPartsPointer)
+            name: nameof(TilesetPartsPointer)
         );
-        palettePointer = s.SerializePointer(
-            palettePointer,
+        PalettePointer = s.SerializePointer(
+            PalettePointer,
             PointerSize.Pointer32,
             basePointer,
-            name: nameof(palettePointer)
+            name: nameof(PalettePointer)
         );
-        tileBehaviorsPointer = s.SerializePointer(
-            tileBehaviorsPointer,
+        TileBehaviorsPointer = s.SerializePointer(
+            TileBehaviorsPointer,
             PointerSize.Pointer32,
             basePointer,
-            name: nameof(tileBehaviorsPointer)
+            name: nameof(TileBehaviorsPointer)
         );
-        gameObjectsPointer = s.SerializePointer(
-            gameObjectsPointer,
+        GameObjectsPointer = s.SerializePointer(
+            GameObjectsPointer,
             PointerSize.Pointer32,
             basePointer,
-            name: nameof(gameObjectsPointer)
+            name: nameof(GameObjectsPointer)
         );
-        overlayPointer = s.SerializePointer(
-            overlayPointer,
+        OverlayPointer = s.SerializePointer(
+            OverlayPointer,
             PointerSize.Pointer32,
             basePointer,
-            name: nameof(overlayPointer)
+            name: nameof(OverlayPointer)
         );
-        itemBoxesPointer = s.SerializePointer(
-            itemBoxesPointer,
+        ItemBoxesPointer = s.SerializePointer(
+            ItemBoxesPointer,
             PointerSize.Pointer32,
             basePointer,
-            name: nameof(itemBoxesPointer)
+            name: nameof(ItemBoxesPointer)
         );
-        finishLinePointer = s.SerializePointer(
-            finishLinePointer,
+        FinishLinePointer = s.SerializePointer(
+            FinishLinePointer,
             PointerSize.Pointer32,
             basePointer,
-            name: nameof(finishLinePointer)
+            name: nameof(FinishLinePointer)
         );
 
         data0 = s.Serialize<uint>(
@@ -153,114 +153,114 @@ public class Track : BinarySerializable
         unk3 = s.SerializeArray(unk3, 32, "Padding - unk");
         //s.SerializePadding(32);
 
-        trackRoutine = s.Serialize<uint>(
-            trackRoutine,
-            nameof(trackRoutine)
+        TrackRoutine = s.Serialize<uint>(
+            TrackRoutine,
+            nameof(TrackRoutine)
         );
 
-        minimapPointer = s.SerializePointer(
-            minimapPointer,
+        MinimapPointer = s.SerializePointer(
+            MinimapPointer,
             PointerSize.Pointer32,
             basePointer,
-            name: nameof(minimapPointer)
+            name: nameof(MinimapPointer)
         );
         
         s.SerializePadding(4);
 
-        trackAIPointer = s.SerializePointer(
-            trackAIPointer,
+        TrackAIPointer = s.SerializePointer(
+            TrackAIPointer,
             PointerSize.Pointer32,
             basePointer,
-            name: nameof(trackAIPointer)
+            name: nameof(TrackAIPointer)
         );
 
         unk4 = s.SerializeArray(unk4, 20, "Padding - unk");
         //s.SerializePadding(20);
 
-        objectGfxPointer = s.SerializePointer(
-            objectGfxPointer,
+        ObjectGfxPointer = s.SerializePointer(
+            ObjectGfxPointer,
             PointerSize.Pointer32,
             basePointer,
-            name: nameof(objectGfxPointer)
+            name: nameof(ObjectGfxPointer)
         );
 
-        objectPalettePointer = s.SerializePointer(
-            objectPalettePointer,
+        ObjectPalettePointer = s.SerializePointer(
+            ObjectPalettePointer,
             PointerSize.Pointer32,
             basePointer,
-            name: nameof(objectPalettePointer)
+            name: nameof(ObjectPalettePointer)
         );
 
         unk5 = s.SerializeArray(unk5, 20, "Padding - unk");
         #endregion
 
         #region Serialize objects
-        s.Goto(palettePointer);
-        palette = s.SerializeObject(
-            palette,
+        s.Goto(PalettePointer);
+        Palette = s.SerializeObject(
+            Palette,
             onPreSerialize: x => x.paletteLength = 64,
-            name: nameof(palette)
+            name: nameof(Palette)
         );
 
-        s.Goto(layoutPointer);
-        layout = s.SerializeObject<Layout>(
-            layout,
-            onPreSerialize: x => x.size = new(trackWidth, trackHeight),
-            name: nameof(layout)
+        s.Goto(LayoutPointer);
+        Layout = s.SerializeObject<Layout>(
+            Layout,
+            onPreSerialize: x => x.size = new(TrackWidth, TrackHeight),
+            name: nameof(Layout)
         );
 
         // TODO: Implement tileset lookback
-        if (tilesetLookback == 0)
+        if (TilesetLookback == 0)
         {
-            s.Goto(tilesetPartsPointer);
-            tileset = s.SerializeObject<Tileset>(
-                tileset,
+            s.Goto(TilesetPartsPointer);
+            Tileset = s.SerializeObject<Tileset>(
+                Tileset,
                 onPreSerialize: x => x.lookback = false,
-                name: nameof(tileset)
+                name: nameof(Tileset)
             );
         }
         else {
-            s.Goto(tilesetPartsPointer);
-            tileset = s.SerializeObject<Tileset>(
-                tileset,
+            s.Goto(TilesetPartsPointer);
+            Tileset = s.SerializeObject<Tileset>(
+                Tileset,
                 onPreSerialize: x => x.lookback = true,
-                name: nameof(tileset)
+                name: nameof(Tileset)
             );
         }
 
-        s.Goto(minimapPointer);
-        minimap = s.SerializeObject<Minimap>(
-            minimap,
-            name: nameof(layout)
+        s.Goto(MinimapPointer);
+        Minimap = s.SerializeObject<Minimap>(
+            Minimap,
+            name: nameof(Minimap)
         );
 
-        s.Goto(tileBehaviorsPointer);
-        tileBehaviors = s.SerializeArray(
-            tileBehaviors,
+        s.Goto(TileBehaviorsPointer);
+        TileBehaviors = s.SerializeArray(
+            TileBehaviors,
             256,
-            name: nameof(layout)
+            name: nameof(TileBehaviors)
         );
-        if (objectGfxPointer.SerializedOffset != 0)
+        if (ObjectGfxPointer.SerializedOffset != 0)
         {
-            switch (trackType)
+            switch (TrackType)
             {
                 case 0x200:
                 case 0x300:
                     {
-                        s.Goto(objectGfxPointer);
-                        objectGfx = s.SerializeObject<ObjectGfx>(
-                            objectGfx,
-                            name: nameof(layout)
+                        s.Goto(ObjectGfxPointer);
+                        ObjectGfx = s.SerializeObject<ObjectGfx>(
+                            ObjectGfx,
+                            name: nameof(ObjectGfx)
                         );
-                        multiObjectGfx = null;
+                        MultiObjectGfx = null;
                         break;
                     }
                 case 0x700:
                     {
-                        s.Goto(objectGfxPointer);
-                        multiObjectGfx = s.SerializeObject<MultiObjectGfx>(
-                            multiObjectGfx,
-                            name: nameof(layout)
+                        s.Goto(ObjectGfxPointer);
+                        MultiObjectGfx = s.SerializeObject<MultiObjectGfx>(
+                            MultiObjectGfx,
+                            name: nameof(MultiObjectGfx)
                         );
                         break;
                     }
@@ -271,44 +271,44 @@ public class Track : BinarySerializable
                     }
             }
         }
-        if (objectPalettePointer.SerializedOffset != 0)
+        if (ObjectPalettePointer.SerializedOffset != 0)
         {
-            s.Goto(objectPalettePointer);
-            objectPalette = s.SerializeObject<AdvancedLib.Types.Palette>(
-                objectPalette,
+            s.Goto(ObjectPalettePointer);
+            ObjectPalette = s.SerializeObject<AdvancedLib.Types.Palette>(
+                ObjectPalette,
                 onPreSerialize: x => x.paletteLength = 16,
-                name: nameof(layout)
+                name: nameof(Layout)
             );
         }
 
-        s.Goto(trackAIPointer);
-        trackAI = s.SerializeObject<TrackAI>(
-            trackAI,
-            name: nameof(layout)
+        s.Goto(TrackAIPointer);
+        TrackAI = s.SerializeObject<TrackAI>(
+            TrackAI,
+            name: nameof(Layout)
         );
 
-        s.Goto(gameObjectsPointer);
-        gameObjects = s.SerializeObject<GameObjectGroup>(
-            gameObjects,
-            name: nameof(gameObjects)
+        s.Goto(GameObjectsPointer);
+        GameObjects = s.SerializeObject<GameObjectGroup>(
+            GameObjects,
+            name: nameof(GameObjects)
         );
 
-        s.Goto(overlayPointer);
-        overlay = s.SerializeObject<GameObjectGroup>(
-            overlay,
-            name: nameof(overlay)
+        s.Goto(OverlayPointer);
+        Overlay = s.SerializeObject<GameObjectGroup>(
+            Overlay,
+            name: nameof(Overlay)
         );
 
-        s.Goto(itemBoxesPointer);
-        itemBoxes = s.SerializeObject<GameObjectGroup>(
-            itemBoxes,
-            name: nameof(itemBoxes)
+        s.Goto(ItemBoxesPointer);
+        ItemBoxes = s.SerializeObject<GameObjectGroup>(
+            ItemBoxes,
+            name: nameof(ItemBoxes)
         );
 
-        s.Goto(finishLinePointer);
-        finishLine = s.SerializeObject<GameObjectGroup>(
-            finishLine,
-            name: nameof(finishLine)
+        s.Goto(FinishLinePointer);
+        FinishLine = s.SerializeObject<GameObjectGroup>(
+            FinishLine,
+            name: nameof(FinishLine)
         );
         #endregion
     }
@@ -320,73 +320,73 @@ public class Track : BinarySerializable
         // Header
         currentSize += 256;
 
-        layoutPointer = new Pointer(currentSize, layoutPointer.File, layoutPointer.Anchor, layoutPointer.Size);
-        layout.RecalculateSize();
-        currentSize += (int)layout.SerializedSize;
+        LayoutPointer = new Pointer(currentSize, LayoutPointer.File, LayoutPointer.Anchor, LayoutPointer.Size);
+        Layout.RecalculateSize();
+        currentSize += (int)Layout.SerializedSize;
 
-        minimapPointer = new Pointer(currentSize, minimapPointer.File, minimapPointer.Anchor, minimapPointer.Size);
-        minimap.RecalculateSize();
-        currentSize += (int)minimap.SerializedSize;
-        if (tilesetLookback == 0)
+        MinimapPointer = new Pointer(currentSize, MinimapPointer.File, MinimapPointer.Anchor, MinimapPointer.Size);
+        Minimap.RecalculateSize();
+        currentSize += (int)Minimap.SerializedSize;
+        if (TilesetLookback == 0)
         {
-            tilesetPartsPointer = new Pointer(currentSize, tilesetPartsPointer.File, tilesetPartsPointer.Anchor, tilesetPartsPointer.Size);
-            tileset.RecalculateSize();
-            currentSize += (int)tileset.SerializedSize;
+            TilesetPartsPointer = new Pointer(currentSize, TilesetPartsPointer.File, TilesetPartsPointer.Anchor, TilesetPartsPointer.Size);
+            Tileset.RecalculateSize();
+            currentSize += (int)Tileset.SerializedSize;
         } else {
             // implement lookback
         }
 
-        palettePointer = new Pointer(currentSize, palettePointer.File, palettePointer.Anchor, palettePointer.Size);
-        palette.RecalculateSize();
-        currentSize += (int)palette.SerializedSize;
+        PalettePointer = new Pointer(currentSize, PalettePointer.File, PalettePointer.Anchor, PalettePointer.Size);
+        Palette.RecalculateSize();
+        currentSize += (int)Palette.SerializedSize;
 
-        tileBehaviorsPointer = new Pointer(currentSize, tileBehaviorsPointer.File, tileBehaviorsPointer.Anchor, tileBehaviorsPointer.Size);
-        currentSize += tileBehaviors.Length;
+        TileBehaviorsPointer = new Pointer(currentSize, TileBehaviorsPointer.File, TileBehaviorsPointer.Anchor, TileBehaviorsPointer.Size);
+        currentSize += TileBehaviors.Length;
 
-        trackAIPointer = new Pointer(currentSize, trackAIPointer.File, trackAIPointer.Anchor, trackAIPointer.Size);
-        trackAI.RecalculateSize();
-        currentSize += (int)trackAI.SerializedSize;
+        TrackAIPointer = new Pointer(currentSize, TrackAIPointer.File, TrackAIPointer.Anchor, TrackAIPointer.Size);
+        TrackAI.RecalculateSize();
+        currentSize += (int)TrackAI.SerializedSize;
 
-        if (objectGfxPointer.SerializedOffset != 0)
+        if (ObjectGfxPointer.SerializedOffset != 0)
         {
-            switch (trackType)
+            switch (TrackType)
             {
                 case 0x200:
                 case 0x300:
-                    objectGfxPointer = new Pointer(currentSize, objectGfxPointer.File, objectGfxPointer.Anchor, objectGfxPointer.Size);
-                    objectGfx.RecalculateSize();
-                    currentSize += (int)objectGfx.SerializedSize;
+                    ObjectGfxPointer = new Pointer(currentSize, ObjectGfxPointer.File, ObjectGfxPointer.Anchor, ObjectGfxPointer.Size);
+                    ObjectGfx.RecalculateSize();
+                    currentSize += (int)ObjectGfx.SerializedSize;
                     break;
                 case 0x700:
-                    objectGfxPointer = new Pointer(currentSize, objectGfxPointer.File, objectGfxPointer.Anchor, objectGfxPointer.Size);
-                    multiObjectGfx.RecalculateSize();
-                    currentSize += (int)multiObjectGfx.SerializedSize;
+                    ObjectGfxPointer = new Pointer(currentSize, ObjectGfxPointer.File, ObjectGfxPointer.Anchor, ObjectGfxPointer.Size);
+                    MultiObjectGfx.RecalculateSize();
+                    currentSize += (int)MultiObjectGfx.SerializedSize;
                     break;
             }
         }
 
-        if (objectPalettePointer.SerializedOffset != 0)
+        if (ObjectPalettePointer.SerializedOffset != 0)
         {
-            objectPalettePointer = new Pointer(currentSize, objectPalettePointer.File, objectPalettePointer.Anchor, objectPalettePointer.Size);
-            objectPalette.RecalculateSize();
-            currentSize += (int)objectPalette.SerializedSize;
+            ObjectPalettePointer = new Pointer(currentSize, ObjectPalettePointer.File, ObjectPalettePointer.Anchor, ObjectPalettePointer.Size);
+            ObjectPalette.RecalculateSize();
+            currentSize += (int)ObjectPalette.SerializedSize;
         }
 
-        gameObjectsPointer = new Pointer(currentSize, gameObjectsPointer.File, gameObjectsPointer.Anchor, gameObjectsPointer.Size);
-        gameObjects.RecalculateSize();
-        currentSize += (int)gameObjects.SerializedSize;
+        GameObjectsPointer = new Pointer(currentSize, GameObjectsPointer.File, GameObjectsPointer.Anchor, GameObjectsPointer.Size);
+        GameObjects.RecalculateSize();
+        currentSize += (int)GameObjects.SerializedSize;
 
-        overlayPointer = new Pointer(currentSize, overlayPointer.File, overlayPointer.Anchor, overlayPointer.Size);
-        overlay.RecalculateSize();
-        currentSize += (int)overlay.SerializedSize;
+        OverlayPointer = new Pointer(currentSize, OverlayPointer.File, OverlayPointer.Anchor, OverlayPointer.Size);
+        Overlay.RecalculateSize();
+        currentSize += (int)Overlay.SerializedSize;
 
-        itemBoxesPointer = new Pointer(currentSize, itemBoxesPointer.File, itemBoxesPointer.Anchor, itemBoxesPointer.Size);
-        itemBoxes.RecalculateSize();
-        currentSize += (int)itemBoxes.SerializedSize;
+        ItemBoxesPointer = new Pointer(currentSize, ItemBoxesPointer.File, ItemBoxesPointer.Anchor, ItemBoxesPointer.Size);
+        ItemBoxes.RecalculateSize();
+        currentSize += (int)ItemBoxes.SerializedSize;
 
-        finishLinePointer = new Pointer(currentSize, finishLinePointer.File, finishLinePointer.Anchor, finishLinePointer.Size);
-        finishLine.RecalculateSize();
-        currentSize += (int)finishLine.SerializedSize;
+        FinishLinePointer = new Pointer(currentSize, FinishLinePointer.File, FinishLinePointer.Anchor, FinishLinePointer.Size);
+        FinishLine.RecalculateSize();
+        currentSize += (int)FinishLine.SerializedSize;
         #endregion
 
         SerializedSize = currentSize;

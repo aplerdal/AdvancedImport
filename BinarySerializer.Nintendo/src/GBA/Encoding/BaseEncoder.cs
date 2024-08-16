@@ -30,8 +30,9 @@ namespace BinarySerializer.Nintendo.GBA
             // Read the decompressed size
             uint decompressedSize = reader.ReadUInt24();
 
-            if (decompressedSize == 0)
-                decompressedSize = reader.ReadUInt32();
+            // Dang this broke a lot of my code LMAO
+            //if (decompressedSize == 0)
+            //    decompressedSize = reader.ReadUInt32();
 
             // Decompress the data
             DecodeStream(reader, output, decompressedSize, headerValue);
