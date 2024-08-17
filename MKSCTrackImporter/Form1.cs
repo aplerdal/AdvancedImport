@@ -70,7 +70,6 @@ namespace MKSCTrackImporter
                 editorPanel.Enabled = true;
             }
         }
-
         private void tilemapExport_Click(object sender, EventArgs e)
         {
             #region Track selected check
@@ -80,27 +79,24 @@ namespace MKSCTrackImporter
                 return;
             }
             #endregion
-
             #region Extract track data
             var trackName = String.Join("", trackNames[trackSelector.SelectedIndex].Split(' '));
-            var trackSize = selectedTrack.TrackWidth * 128;
-            string csvData = string.Join("\n", Enumerable.Range(0, trackSize)
-                .Select(y => string.Join(",", Enumerable.Range(0, trackSize)
-                    .Select(x => (selectedTrack.Layout.indicies[x + y * trackSize] + 1).ToString())) + ","));
+            var trackWidth = selectedTrack.TrackWidth * 128;
+            var trackHeight= selectedTrack.TrackHeight * 128;
+            string csvData = string.Join("\n", Enumerable.Range(0, trackWidth)
+                .Select(y => string.Join(",", Enumerable.Range(0, trackHeight)
+                    .Select(x => (selectedTrack.Layout.indicies[x + y * trackWidth] + 1).ToString())) + ","));
             #endregion
-            // Comments for when I forget what goes wrong later:
-            // nextlayerid may change if I add more layers (highest layer +1)
-            // next objectid might do stuff (highest obj +1)
             #region XML Layout
             int objID = 1;
             XElement tilemapData = new XElement("map",
                 new XAttribute("version", "1.10"), new XAttribute("tiledversion", "1.11.0"), new XAttribute("orientation", "orthogonal"), new XAttribute("renderorder", "right-down"),
-                new XAttribute("width", $"{trackSize}"), new XAttribute("height", $"{trackSize}"),
+                new XAttribute("width", trackWidth), new XAttribute("height", trackHeight),
                 new XAttribute("tilewidth", "8"), new XAttribute("tileheight", "8"), new XAttribute("infinite", "0"),
                 new XElement("tileset", new XAttribute("firstgid", "1"), new XAttribute("source", $"{trackName}.tsx")),
                 new XElement("layer",
                     new XAttribute("id", "1"), new XAttribute("name", "Tilemap"),
-                    new XAttribute("width", "256"), new XAttribute("height", "256"),
+                    new XAttribute("width", trackWidth), new XAttribute("height", trackHeight),
 
                     new XElement("data", new XAttribute("encoding", "csv"),
                         csvData
@@ -125,6 +121,7 @@ namespace MKSCTrackImporter
             #endregion
             #region Start line
             var startLineGroup = tilemapData.Elements("objectgroup").First(o => o.Attribute("name").Value == "Start Line");
+            
             string[] names = {
                 "1st start position",
                 "2nd start position",
@@ -138,6 +135,7 @@ namespace MKSCTrackImporter
                 "Multi-pak 2nd start position",
                 "Finish line top left",
             };
+            
             foreach (GameObject o in selectedTrack.FinishLine.GameObjects)
             {
                 startLineGroup.Add(
@@ -319,7 +317,7 @@ namespace MKSCTrackImporter
                 
             }
         #endregion
-        #region Saving
+            #region Saving
         SaveFile:
             saveFileDialog.DefaultExt = "tmx";
             saveFileDialog.Filter = "TMX Files|*.tmx|All Files|*.*";
@@ -356,7 +354,6 @@ namespace MKSCTrackImporter
             MessageBox.Show("Sucessfully exported tilemap", "Sucess", MessageBoxButtons.OK, MessageBoxIcon.Information);
             #endregion
         }
-
         private void tilesetExport_Click(object sender, EventArgs e)
         {
             #region Track selected check
@@ -366,6 +363,7 @@ namespace MKSCTrackImporter
                 return;
             }
             #endregion
+            #region Tilset image generation
             var trackName = String.Join("", trackNames[trackSelector.SelectedIndex].Split(' '));
 
             Bitmap image = new Bitmap(16 * 8, 16 * 8, PixelFormat.Format8bppIndexed);
@@ -425,7 +423,8 @@ namespace MKSCTrackImporter
                 pal.Entries[i] = Color.Black;
             }
             image.Palette = pal;
-
+        #endregion
+            #region Save files
         SavePNG:
             saveFileDialog.DefaultExt = "png";
             saveFileDialog.Filter = "PNG Files|*.png|All Files|*.*";
@@ -516,8 +515,8 @@ namespace MKSCTrackImporter
                     return;
                 }
             }
+            #endregion
         }
-
         private void tilemapImport_Click(object sender, EventArgs e)
         {
             #region Track selected check
@@ -528,25 +527,32 @@ namespace MKSCTrackImporter
                 return;
             }
             #endregion
+            #region Import file
             openFileDialog.Filter = "TMX Files|*.tmx|All Files|*.*";
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
                 XDocument tilemap;
+
+                #if !DEBUG
                 try
                 {
+                #endif
+
                     tilemap = XDocument.Load(openFileDialog.FileName);
+
+                #if !DEBUG
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show($"{ex.ToString()}", "Error reading file",
                         MessageBoxButtons.OK, MessageBoxIcon.Error);
-#if DEBUG
-                    throw;
-#endif
                     return;
                 }
+                #endif
+
                 XElement? root = tilemap.Root;
-#pragma warning disable CS8602
+
+                #pragma warning disable CS8602
                 try
                 {
                     if ((root.Name == "map")
@@ -557,6 +563,10 @@ namespace MKSCTrackImporter
                         )
                     {
                         XElement tilemapLayer = root.Descendants("layer").First(o => o.Attribute("name").Value == "Tilemap");
+                        var trackWidth = Int32.Parse(tilemapLayer.Attribute("width").Value) / 128;
+                        var trackHeight = Int32.Parse(tilemapLayer.Attribute("height").Value) / 128;
+                        selectedTrack.TrackHeight = (byte)trackHeight;
+                        selectedTrack.TrackWidth = (byte)trackWidth;
                         XElement data = root.Descendants("data").First(o => o.Attribute("encoding").Value == "csv");
                         XElement startPositions = root.Descendants("objectgroup").First(o => o.Attribute("name").Value == "Start Line");
                         var split = data.Value.Split(',');
@@ -574,18 +584,16 @@ namespace MKSCTrackImporter
                         selectedTrack.FinishLine.GameObjects = gameObjectData;
                     }
                 }
+            
                 catch (Exception ex)
                 {
                     MessageBox.Show($"Error reading track: {ex}", "Error",
                         MessageBoxButtons.OK, MessageBoxIcon.Error);
-#if DEBUG
                     throw;
-#endif
-                    return;
                 }
-#pragma warning restore CS8602
-
+                #pragma warning restore CS8602
             }
+            #endregion
         }
         private void tilesetImport_Click(object sender, EventArgs e)
         {
@@ -597,7 +605,7 @@ namespace MKSCTrackImporter
                 return;
             }
             #endregion
-
+            #region Import file
             openFileDialog.Filter = "TSX Files|*.tsx;|All Files|*.*";
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
@@ -656,8 +664,8 @@ namespace MKSCTrackImporter
 
                 selectedTrack.Palette.palette = pal;
             }
+            #endregion
         }
-
         private void saveButton_Click(object sender, EventArgs e)
         {
             try
@@ -704,7 +712,6 @@ namespace MKSCTrackImporter
                 comboBox1.SelectedIndex = trackSelector.SelectedIndex + selectedTrack.TilesetLookback;
             }
         }
-
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (trackSelector.SelectedIndex < 0)
@@ -714,7 +721,6 @@ namespace MKSCTrackImporter
             }
             selectedTrack.TilesetLookback = (sbyte)(comboBox1.SelectedIndex - trackSelector.SelectedIndex);
         }
-
         private void button3_Click(object sender, EventArgs e)
         {
         SaveProject:
