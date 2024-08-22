@@ -4,6 +4,7 @@ using AdvancedLib.Types;
 using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Xml.Linq;
 
@@ -33,7 +34,7 @@ namespace MKSCTrackImporter
                 try
                 {
 #endif
-                manager.Open(openFileDialog.FileName);
+                    manager.Open(openFileDialog.FileName);
 #if !DEBUG
                 }
                 catch (Exception ex)
@@ -52,7 +53,7 @@ namespace MKSCTrackImporter
                 try
                 {
 #endif
-                manager.Deserialize();
+                    manager.Deserialize();
 #if !DEBUG
                 }
                 catch (Exception ex)
@@ -82,7 +83,7 @@ namespace MKSCTrackImporter
             #region Extract track data
             var trackName = String.Join("", trackNames[trackSelector.SelectedIndex].Split(' '));
             var trackWidth = selectedTrack.TrackWidth * 128;
-            var trackHeight= selectedTrack.TrackHeight * 128;
+            var trackHeight = selectedTrack.TrackHeight * 128;
             string csvData = string.Join("\n", Enumerable.Range(0, trackWidth)
                 .Select(y => string.Join(",", Enumerable.Range(0, trackHeight)
                     .Select(x => (selectedTrack.Layout.indicies[x + y * trackWidth] + 1).ToString())) + ","));
@@ -121,7 +122,7 @@ namespace MKSCTrackImporter
             #endregion
             #region Start line
             var startLineGroup = tilemapData.Elements("objectgroup").First(o => o.Attribute("name").Value == "Start Line");
-            
+
             string[] names = {
                 "1st start position",
                 "2nd start position",
@@ -135,7 +136,7 @@ namespace MKSCTrackImporter
                 "Multi-pak 2nd start position",
                 "Finish line top left",
             };
-            
+
             foreach (GameObject o in selectedTrack.FinishLine.GameObjects)
             {
                 startLineGroup.Add(
@@ -171,7 +172,7 @@ namespace MKSCTrackImporter
             var targetsGroup3 = tilemapData.Elements("objectgroup").First(o => o.Attribute("name").Value == "AI Targets set 3");
             int targetCount = 512;
 
-            for (int i = 0; i < selectedTrack.TrackAI.Targets.Length/3; i++)
+            for (int i = 0; i < selectedTrack.TrackAI.Targets.Length / 3; i++)
             {
                 AiTarget o = selectedTrack.TrackAI.Targets[i];
                 targetsGroup1.Add(
@@ -243,7 +244,7 @@ namespace MKSCTrackImporter
                     )
                 );
             }
-            
+
             int zoneCount = 1024;
             foreach (AiZone o in selectedTrack.TrackAI.Zones)
             {
@@ -273,20 +274,14 @@ namespace MKSCTrackImporter
                             new XAttribute("x", o.X * 8),
                             new XAttribute("y", o.Y * 8),
                             new XAttribute("width", o.Width * 8),
-                            new XAttribute("height", o.Height * 8),
-                            new XElement("properties",
-                                new XElement("property",
-                                    new XAttribute("name", "Zone Shape"),
-                                    new XAttribute("propertytype", "Shape"),
-                                    new XAttribute("type", "int"),
-                                    new XAttribute("value", o.Shape)
-                                ),
-                                new XElement("property",
-                                    new XAttribute("name", "DISPLAY ONLY TARGET"),
-                                    new XAttribute("type", "object"),
-                                    new XAttribute("value", zoneCount-512)
-                                )
-                            )
+                            new XAttribute("height", o.Height * 8)
+                        /* This is confusing because its just for looks,
+                        new XElement("property",
+                            new XAttribute("name", "DISPLAY ONLY TARGET"),
+                            new XAttribute("type", "object"),
+                            new XAttribute("value", zoneCount-512)
+                        )*/
+
                         )
                     );
                 } else
@@ -297,27 +292,21 @@ namespace MKSCTrackImporter
                             new XAttribute("x", o.X * 8),
                             new XAttribute("y", o.Y * 8),
                             new XElement("polygon",
-                                new XAttribute("points", points)),
-                            new XElement("properties",
-                                new XElement("property",
-                                    new XAttribute("name", "Zone Shape"),
-                                    new XAttribute("propertytype", "Shape"),
-                                    new XAttribute("type", "int"),
-                                    new XAttribute("value", o.Shape)
-                                ),
-                                new XElement("property",
-                                    new XAttribute("name", "DISPLAY ONLY TARGET"),
-                                    new XAttribute("type", "object"),
-                                    new XAttribute("value", zoneCount - 512)
-                                )
-                            )
+                                new XAttribute("points", points))
+                        /*,
+                            new XElement("property",
+                                new XAttribute("name", "DISPLAY ONLY TARGET"),
+                                new XAttribute("type", "object"),
+                                new XAttribute("value", zoneCount - 512)
+                            )*/
+
                         )
                     );
                 }
-                
+
             }
         #endregion
-            #region Saving
+        #region Saving
         SaveFile:
             saveFileDialog.DefaultExt = "tmx";
             saveFileDialog.Filter = "TMX Files|*.tmx|All Files|*.*";
@@ -424,7 +413,7 @@ namespace MKSCTrackImporter
             }
             image.Palette = pal;
         #endregion
-            #region Save files
+        #region Save files
         SavePNG:
             saveFileDialog.DefaultExt = "png";
             saveFileDialog.Filter = "PNG Files|*.png|All Files|*.*";
@@ -533,14 +522,14 @@ namespace MKSCTrackImporter
             {
                 XDocument tilemap;
 
-                #if !DEBUG
+#if !DEBUG
                 try
                 {
-                #endif
+#endif
 
                     tilemap = XDocument.Load(openFileDialog.FileName);
 
-                #if !DEBUG
+#if !DEBUG
                 }
                 catch (Exception ex)
                 {
@@ -548,11 +537,11 @@ namespace MKSCTrackImporter
                         MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
-                #endif
+#endif
 
                 XElement? root = tilemap.Root;
 
-                #pragma warning disable CS8602
+#pragma warning disable CS8602
                 try
                 {
                     if ((root.Name == "map")
@@ -573,7 +562,7 @@ namespace MKSCTrackImporter
                         byte[] trackData = split.Take(split.Length - 1).Select(s => (byte)(int.Parse(s) - 1)).ToArray(); // Convert CSV to byte array
                         selectedTrack.Layout.indicies = trackData;
 
-                        GameObject[] gameObjectData = (
+                        GameObject[] finishGameObjectData = (
                             from o in startPositions.Elements("object").Select(o => o.Element("properties"))
                             select new GameObject(
                                 Byte.Parse(o.Elements("property").First(p => p.Attribute("name").Value == "type").Attribute("value").Value),
@@ -581,19 +570,119 @@ namespace MKSCTrackImporter
                                 (byte)(Int32.Parse(o.Parent.Attribute("y").Value) / 8),
                                 Byte.Parse(o.Elements("property").First(p => p.Attribute("name").Value == "zone").Attribute("value").Value)
                             )).ToArray();
-                        selectedTrack.FinishLine.GameObjects = gameObjectData;
+                        selectedTrack.FinishLine.GameObjects = finishGameObjectData;
+
+                        XElement zonesElement = root.Descendants("objectgroup").First(o => o.Attribute("name").Value == "AI Zones");
+                        int oldLen = selectedTrack.TrackAI.Zones.Length;
+                        if (selectedTrack.TrackAI.Zones.Length != zonesElement.Elements("object").Count())
+                        {
+                            Array.Resize(ref selectedTrack.TrackAI.Zones, zonesElement.Elements("object").Count());
+                            if (oldLen < selectedTrack.TrackAI.Zones.Length)
+                            {
+                                for (int j = oldLen; j < selectedTrack.TrackAI.Zones.Length; j++)
+                                {
+                                    selectedTrack.TrackAI.Zones[j] = selectedTrack.TrackAI.Zones[0];
+                                }
+                            }
+                        }
+                        int i = 0;
+                        foreach (var o in zonesElement.Elements("object"))
+                        {
+
+                            if (o.Element("polygon") != null)
+                            {
+                                Point[] trianglePoints = (from p in o.Element("polygon").Attribute("points").Value.Split(' ')
+                                                          select new Point(Int32.Parse(p.Split(",")[0]), Int32.Parse(p.Split(",")[1]))).ToArray();
+
+                                int? cornerIndex = FindCorner(trianglePoints);
+                                if (cornerIndex == null)
+                                    MessageBox.Show($"Error reading track: Invalid triangle zone in AI zones", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                                Point cornerPos = trianglePoints[cornerIndex.Value];
+                                trianglePoints = trianglePoints.Select(o => new Point(o.X + cornerPos.X, o.Y + cornerPos.Y)).ToArray();
+
+                                trianglePoints[cornerIndex.Value] = trianglePoints[0];
+                                trianglePoints[0] = cornerPos;
+
+                                int triSize;
+                                byte triangleType = TriangleType(trianglePoints, out triSize);
+
+                                int adjustedX = (Int32.Parse(o.Attribute("x").Value) / 8) - cornerPos.X;
+                                int adjustedY = (Int32.Parse(o.Attribute("y").Value) / 8) - cornerPos.Y;
+
+                                selectedTrack.TrackAI.Zones[i++].Shape = triangleType;
+                                selectedTrack.TrackAI.Zones[i++].X = adjustedX;
+                                selectedTrack.TrackAI.Zones[i++].Y = adjustedY;
+                                selectedTrack.TrackAI.Zones[i++].Width = triSize / 8;
+                                selectedTrack.TrackAI.Zones[i++].Height = 0;
+                            } else {
+                                selectedTrack.TrackAI.Zones[i++].Shape = 0;
+                                selectedTrack.TrackAI.Zones[i++].X = Int32.Parse(o.Attribute("x").Value) / 8;
+                                selectedTrack.TrackAI.Zones[i++].Y = Int32.Parse(o.Attribute("y").Value) / 8;
+                                selectedTrack.TrackAI.Zones[i++].Width = Int32.Parse(o.Attribute("width").Value) / 8;
+                                selectedTrack.TrackAI.Zones[i++].Height = Int32.Parse(o.Attribute("height").Value) / 8;
+                            }
+                        }
+                        
+                        AiTarget[] aiTargets = null;
                     }
                 }
-            
+
                 catch (Exception ex)
                 {
                     MessageBox.Show($"Error reading track: {ex}", "Error",
                         MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    throw;
                 }
-                #pragma warning restore CS8602
+#pragma warning restore CS8602
             }
             #endregion
+        }
+        private static int? FindCorner(Point[] points)
+        {
+            // This code is so bad but I am too tired for good code and also its probably faster anyways
+            if (
+                (points[0].X == points[1].X && points[0].Y == points[2].Y) || (points[0].X == points[2].X && points[0].Y == points[1].Y)
+                )
+                return 0;
+            if (
+                (points[1].X == points[0].X && points[1].Y == points[2].Y) || (points[1].X == points[2].X && points[1].Y == points[0].Y)
+                )
+                return 1;
+            if (
+                (points[2].X == points[1].X && points[2].Y == points[0].Y) || (points[2].X == points[0].X && points[2].Y == points[1].Y)
+                )
+                return 2;
+            return null;
+        }
+        private static byte TriangleType(Point[] points, out int width)
+        {
+            // first coord must be 0,0
+            if ((points[0].X | points[0].Y) != 0)
+                throw new ArgumentException("Whoops I goofed");
+            bool top;
+            bool left;
+            if (points[1].X == 0)
+            {
+                width = Math.Abs(points[1].Y);
+                top = (points[1].Y > 0);
+                left = (points[2].X > 0);
+            }
+            else
+            {
+                width = Math.Abs(points[1].X);
+                left = (points[1].X > 0);
+                top = (points[2].Y > 0);
+            }
+            if (top)
+                if (left)
+                    return 1;
+                else
+                    return 2;
+            else
+                if (left)
+                    return 4;
+                else 
+                    return 3;
         }
         private void tilesetImport_Click(object sender, EventArgs e)
         {

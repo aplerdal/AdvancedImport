@@ -29,6 +29,15 @@ public class AiZone : BinarySerializable{
         set => HalfHeight = (ushort)(value / 2);
     }
     public int DisplayHeight { get => (Shape == 0) ? Height:Width; }
+    public AiZone() { }
+    public AiZone(byte shape, int x, int y, int width, int height)
+    {
+        Shape = shape;
+        X = x;
+        Y = y;
+        Width = width;
+        Height = height;
+    }
     public override void SerializeImpl(SerializerObject s)
     {
         Shape = s.Serialize<byte>(Shape, nameof(Shape)); //shape

@@ -5,7 +5,7 @@ namespace AdvancedLib.Serialize;
 public class TrackAI : BinarySerializable{
     byte zonesCount {get; set;}
     Pointer zonesPointer {get; set;}
-    public AiZone[] Zones { get; set;}
+    public AiZone[] Zones;
     Pointer targetsPointer {get; set;}
     public AiTarget[] Targets { get; set;}
     public override void SerializeImpl(SerializerObject s)
