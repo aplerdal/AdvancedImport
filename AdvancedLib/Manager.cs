@@ -13,11 +13,7 @@ public class Manager
 {
     LinearFile file;
 
-    Context context = new Context(""
-#if DEBUG
-        , serializerLogger: new FileSerializerLogger("C:\\Users\\apler\\Downloads\\Log.txt")
-#endif
-    );
+    Context context;
 
     public static Region region;
     private string path { get; set;  }
@@ -25,7 +21,11 @@ public class Manager
     public ROMHeader header { get; set; }
     public TrackManager trackManager { get; set; }
     
-    public Manager() {
+    public Manager(bool loggingEnabled) {
+        if (loggingEnabled)
+            context = new Context("", serializerLogger: new FileSerializerLogger("Log.txt"));
+        else
+            context = new Context("");
         context.AddPreDefinedPointers(new Dictionary<Region, long>()
         {
             [Region.USA] = 0x258000, 

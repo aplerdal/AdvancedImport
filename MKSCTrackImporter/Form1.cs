@@ -18,7 +18,7 @@ namespace MKSCTrackImporter
         public Form1()
         {
             InitializeComponent();
-            manager = new Manager();
+            manager = new Manager(Program.loggingEnabled);
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -157,7 +157,7 @@ namespace MKSCTrackImporter
                             new XElement("property",
                                 new XAttribute("name", "name"),
                                 new XAttribute("type", "string"),
-                                new XAttribute("value", names[o.Id - 0x81])
+                                new XAttribute("value", names[Math.Clamp(o.Id - 0x81,0, 20)])
                             )
                         ),
                         new XElement("point")
@@ -184,7 +184,7 @@ namespace MKSCTrackImporter
                             new XElement("property",
                                 new XAttribute("name", "intersection"),
                                 new XAttribute("type", "bool"),
-                                new XAttribute("value", (o.Intersection == 0) ? "true" : "false")
+                                new XAttribute("value", (o.Intersection == 0) ? "false" : "true")
                             ),
                             new XElement("property",
                                 new XAttribute("name", "speed"),
@@ -504,6 +504,7 @@ namespace MKSCTrackImporter
                     return;
                 }
             }
+            MessageBox.Show("Sucessfully exported tileset", "Sucess", MessageBoxButtons.OK, MessageBoxIcon.Information);
             #endregion
         }
         private void tilemapImport_Click(object sender, EventArgs e)
@@ -542,26 +543,25 @@ namespace MKSCTrackImporter
                 XElement? root = tilemap.Root;
 
 #pragma warning disable CS8602
-                try
+                if ((root.Name == "map")
+                    && (root.Attribute("orientation").Value == "orthogonal")
+                    && (root.Attribute("tilewidth").Value == "8")
+                    && (root.Attribute("tileheight").Value == "8")
+                    && (root.Attribute("infinite").Value == "0")
+                    )
                 {
-                    if ((root.Name == "map")
-                        && (root.Attribute("orientation").Value == "orthogonal")
-                        && (root.Attribute("tilewidth").Value == "8")
-                        && (root.Attribute("tileheight").Value == "8")
-                        && (root.Attribute("infinite").Value == "0")
-                        )
-                    {
-                        XElement tilemapLayer = root.Descendants("layer").First(o => o.Attribute("name").Value == "Tilemap");
-                        var trackWidth = Int32.Parse(tilemapLayer.Attribute("width").Value) / 128;
-                        var trackHeight = Int32.Parse(tilemapLayer.Attribute("height").Value) / 128;
-                        selectedTrack.TrackHeight = (byte)trackHeight;
-                        selectedTrack.TrackWidth = (byte)trackWidth;
-                        XElement data = root.Descendants("data").First(o => o.Attribute("encoding").Value == "csv");
-                        XElement startPositions = root.Descendants("objectgroup").First(o => o.Attribute("name").Value == "Start Line");
-                        var split = data.Value.Split(',');
-                        byte[] trackData = split.Take(split.Length - 1).Select(s => (byte)(int.Parse(s) - 1)).ToArray(); // Convert CSV to byte array
-                        selectedTrack.Layout.indicies = trackData;
-
+                    XElement tilemapLayer = root.Descendants("layer").First(o => o.Attribute("name").Value == "Tilemap");
+                    var trackWidth = Int32.Parse(tilemapLayer.Attribute("width").Value) / 128;
+                    var trackHeight = Int32.Parse(tilemapLayer.Attribute("height").Value) / 128;
+                    selectedTrack.TrackHeight = (byte)trackHeight;
+                    selectedTrack.TrackWidth = (byte)trackWidth;
+                    XElement data = root.Descendants("data").First(o => o.Attribute("encoding").Value == "csv");
+                    XElement startPositions = root.Descendants("objectgroup").First(o => o.Attribute("name").Value == "Start Line");
+                    var split = data.Value.Split(',');
+                    byte[] trackData = split.Take(split.Length - 1).Select(s => (byte)(int.Parse(s) - 1)).ToArray(); // Convert CSV to byte array
+                    selectedTrack.Layout.indicies = trackData;
+                
+                    #region Finish Line
                         GameObject[] finishGameObjectData = (
                             from o in startPositions.Elements("object").Select(o => o.Element("properties"))
                             select new GameObject(
@@ -571,67 +571,112 @@ namespace MKSCTrackImporter
                                 Byte.Parse(o.Elements("property").First(p => p.Attribute("name").Value == "zone").Attribute("value").Value)
                             )).ToArray();
                         selectedTrack.FinishLine.GameObjects = finishGameObjectData;
-
-                        XElement zonesElement = root.Descendants("objectgroup").First(o => o.Attribute("name").Value == "AI Zones");
-                        int oldLen = selectedTrack.TrackAI.Zones.Length;
-                        if (selectedTrack.TrackAI.Zones.Length != zonesElement.Elements("object").Count())
+                        #endregion
+                
+                    #region Zones
+                    XElement zonesElement = root.Descendants("objectgroup").First(o => o.Attribute("name").Value == "AI Zones");
+                    int oldLen = selectedTrack.TrackAI.Zones.Length;
+                    if (selectedTrack.TrackAI.Zones.Length != zonesElement.Elements("object").Count())
+                    {
+                        Array.Resize(ref selectedTrack.TrackAI.Zones, zonesElement.Elements("object").Count());
+                        if (oldLen < selectedTrack.TrackAI.Zones.Length)
                         {
-                            Array.Resize(ref selectedTrack.TrackAI.Zones, zonesElement.Elements("object").Count());
-                            if (oldLen < selectedTrack.TrackAI.Zones.Length)
+                            for (int j = oldLen; j < selectedTrack.TrackAI.Zones.Length; j++)
                             {
-                                for (int j = oldLen; j < selectedTrack.TrackAI.Zones.Length; j++)
-                                {
-                                    selectedTrack.TrackAI.Zones[j] = selectedTrack.TrackAI.Zones[0];
-                                }
+                                selectedTrack.TrackAI.Zones[j] = new AiZone();
                             }
                         }
-                        int i = 0;
-                        foreach (var o in zonesElement.Elements("object"))
+                        if (selectedTrack.TrackAI.Zones.Length > 255)
                         {
-
-                            if (o.Element("polygon") != null)
-                            {
-                                Point[] trianglePoints = (from p in o.Element("polygon").Attribute("points").Value.Split(' ')
-                                                          select new Point(Int32.Parse(p.Split(",")[0]), Int32.Parse(p.Split(",")[1]))).ToArray();
-
-                                int? cornerIndex = FindCorner(trianglePoints);
-                                if (cornerIndex == null)
-                                    MessageBox.Show($"Error reading track: Invalid triangle zone in AI zones", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-
-                                Point cornerPos = trianglePoints[cornerIndex.Value];
-                                trianglePoints = trianglePoints.Select(o => new Point(o.X + cornerPos.X, o.Y + cornerPos.Y)).ToArray();
-
-                                trianglePoints[cornerIndex.Value] = trianglePoints[0];
-                                trianglePoints[0] = cornerPos;
-
-                                int triSize;
-                                byte triangleType = TriangleType(trianglePoints, out triSize);
-
-                                int adjustedX = (Int32.Parse(o.Attribute("x").Value) / 8) - cornerPos.X;
-                                int adjustedY = (Int32.Parse(o.Attribute("y").Value) / 8) - cornerPos.Y;
-
-                                selectedTrack.TrackAI.Zones[i++].Shape = triangleType;
-                                selectedTrack.TrackAI.Zones[i++].X = adjustedX;
-                                selectedTrack.TrackAI.Zones[i++].Y = adjustedY;
-                                selectedTrack.TrackAI.Zones[i++].Width = triSize / 8;
-                                selectedTrack.TrackAI.Zones[i++].Height = 0;
-                            } else {
-                                selectedTrack.TrackAI.Zones[i++].Shape = 0;
-                                selectedTrack.TrackAI.Zones[i++].X = Int32.Parse(o.Attribute("x").Value) / 8;
-                                selectedTrack.TrackAI.Zones[i++].Y = Int32.Parse(o.Attribute("y").Value) / 8;
-                                selectedTrack.TrackAI.Zones[i++].Width = Int32.Parse(o.Attribute("width").Value) / 8;
-                                selectedTrack.TrackAI.Zones[i++].Height = Int32.Parse(o.Attribute("height").Value) / 8;
-                            }
+                            MessageBox.Show($"Tracks cannot have more than 255 zones. Exiting.", "Error",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            return;
                         }
-                        
-                        AiTarget[] aiTargets = null;
+                        selectedTrack.TrackAI.zonesCount = (byte)selectedTrack.TrackAI.Zones.Length;
                     }
-                }
-
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Error reading track: {ex}", "Error",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    int i = 0;
+                    foreach (var o in zonesElement.Elements("object"))
+                    {
+                
+                        if (o.Element("polygon") != null)
+                        {
+                            Point[] trianglePoints = (from p in o.Element("polygon").Attribute("points").Value.Split(' ')
+                                                      select new Point(Int32.Parse(p.Split(",")[0]), Int32.Parse(p.Split(",")[1]))).ToArray();
+                
+                            int? cornerIndex = FindCorner(trianglePoints);
+                            if (cornerIndex == null)
+                                MessageBox.Show($"Error reading track: Invalid triangle zone in AI zones", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                
+                            Point cornerPos = trianglePoints[cornerIndex.Value];
+                            trianglePoints = trianglePoints.Select(o => new Point(o.X + cornerPos.X, o.Y + cornerPos.Y)).ToArray();
+                
+                            trianglePoints[cornerIndex.Value] = trianglePoints[0];
+                            trianglePoints[0] = cornerPos;
+                
+                            int triSize;
+                            byte triangleType = TriangleType(trianglePoints, out triSize);
+                
+                            int adjustedX = (Int32.Parse(o.Attribute("x").Value) / 8) - cornerPos.X;
+                            int adjustedY = (Int32.Parse(o.Attribute("y").Value) / 8) - cornerPos.Y;
+                
+                            selectedTrack.TrackAI.Zones[i].Shape = triangleType;
+                            selectedTrack.TrackAI.Zones[i].X = adjustedX;
+                            selectedTrack.TrackAI.Zones[i].Y = adjustedY;
+                            selectedTrack.TrackAI.Zones[i].Width = triSize / 8;
+                            selectedTrack.TrackAI.Zones[i++].Height = 0;
+                        } else {
+                            selectedTrack.TrackAI.Zones[i].Shape = 0;
+                            selectedTrack.TrackAI.Zones[i].X = Int32.Parse(o.Attribute("x").Value) / 8;
+                            selectedTrack.TrackAI.Zones[i].Y = Int32.Parse(o.Attribute("y").Value) / 8;
+                            selectedTrack.TrackAI.Zones[i].Width = Int32.Parse(o.Attribute("width").Value) / 8;
+                            selectedTrack.TrackAI.Zones[i++].Height = Int32.Parse(o.Attribute("height").Value) / 8;
+                        }
+                    }
+                    #endregion
+                
+                    #region Targets
+                    XElement targets1element = root.Descendants("objectgroup").First(o => o.Attribute("name").Value == "AI Targets set 1");
+                    XElement targets2element = root.Descendants("objectgroup").First(o => o.Attribute("name").Value == "AI Targets set 2");
+                    XElement targets3element = root.Descendants("objectgroup").First(o => o.Attribute("name").Value == "AI Targets set 3");
+                    
+                    if ((targets1element.Elements("object").Count() != selectedTrack.TrackAI.Zones.Length) ||
+                        (targets2element.Elements("object").Count() != selectedTrack.TrackAI.Zones.Length) ||
+                        (targets3element.Elements("object").Count() != selectedTrack.TrackAI.Zones.Length)
+                        )
+                    {
+                        MessageBox.Show($"Each target group must have the same number of targets as there are zones. Exiting.", "Error",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+                
+                    var allTargets = targets1element.Elements("object").Concat(targets2element.Elements("object")).Concat(targets3element.Elements("object"));
+                    oldLen = selectedTrack.TrackAI.Targets.Length;
+                    var newLen = allTargets.Count();
+                    if (selectedTrack.TrackAI.Targets.Length != newLen)
+                    {
+                        Array.Resize(ref selectedTrack.TrackAI.Targets, newLen);
+                        if (oldLen < selectedTrack.TrackAI.Targets.Length)
+                        {
+                            for (int j = oldLen; j < selectedTrack.TrackAI.Targets.Length; j++)
+                            {
+                                selectedTrack.TrackAI.Targets[j] = new AiTarget();
+                            }
+                        }
+                        selectedTrack.TrackAI.RecalculateSize(); // update pointers and crash sooner so I can debug
+                    }
+                
+                    i = 0;
+                    foreach (var o in allTargets)
+                    {
+                        var props = o.Element("properties").Elements("property");
+                        selectedTrack.TrackAI.Targets[i].X = (ushort)(int.Parse(o.Attribute("x").Value)/8);
+                        selectedTrack.TrackAI.Targets[i].Y = (ushort)(int.Parse(o.Attribute("y").Value)/8);
+                        selectedTrack.TrackAI.Targets[i].Speed = ushort.Parse(props.First(p => p.Attribute("name").Value == "speed").Attribute("value").Value);
+                        selectedTrack.TrackAI.Targets[i++].Intersection = (ushort)((props.First(p => p.Attribute("name").Value == "intersection").Attribute("value").Value == "false")?0:8);
+                    }
+                    #endregion
+                
+                    MessageBox.Show("Sucessfully imported tilemap", "Sucess", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
 #pragma warning restore CS8602
             }

@@ -3,11 +3,11 @@ using BinarySerializer;
 namespace AdvancedLib.Serialize;
 
 public class TrackAI : BinarySerializable{
-    byte zonesCount {get; set;}
+    public byte zonesCount {get; set;}
     Pointer zonesPointer {get; set;}
     public AiZone[] Zones;
     Pointer targetsPointer {get; set;}
-    public AiTarget[] Targets { get; set;}
+    public AiTarget[] Targets;
     public override void SerializeImpl(SerializerObject s)
     {
         Pointer basePointer = s.CurrentPointer;
@@ -39,7 +39,7 @@ public class TrackAI : BinarySerializable{
         Targets = s.SerializeObjectArray(
             Targets,
             zonesCount * 3,
-            name: nameof(Zones)
+            name: nameof(Targets)
         );
         s.SerializePadding(3);
     }
