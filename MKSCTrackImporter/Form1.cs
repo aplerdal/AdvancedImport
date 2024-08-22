@@ -30,23 +30,19 @@ namespace MKSCTrackImporter
 
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
-#if !DEBUG
                 try
                 {
-#endif
                     manager.Open(openFileDialog.FileName);
-#if !DEBUG
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"{ex.ToString()}", "Error opening file",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    AdvancedImport.Error.FileReadError(ex);
+
                     labelRomOpened.Text = "ROM not loaded";
                     labelRomOpened.ForeColor = Color.Maroon;
 
                     return;
                 }
-#endif
                 labelRomOpened.Text = "Deserializing ROM";
                 labelRomOpened.ForeColor = Color.Orange;
 #if !DEBUG
@@ -58,8 +54,7 @@ namespace MKSCTrackImporter
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"{ex.ToString()}", "Error reading file",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    AdvancedImport.Error.DeserializeError(ex);
                     labelRomOpened.Text = "ROM not loaded";
                     labelRomOpened.ForeColor = Color.Maroon;
 
@@ -76,7 +71,7 @@ namespace MKSCTrackImporter
             #region Track selected check
             if (trackSelector.SelectedIndex < 0)
             {
-                MessageBox.Show("No Track Selected", "Please Select a track", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                AdvancedImport.Error.NoTrackSelectedError();
                 return;
             }
             #endregion
@@ -306,8 +301,7 @@ namespace MKSCTrackImporter
 
             }
         #endregion
-        #region Saving
-        SaveFile:
+            #region Saving
             saveFileDialog.DefaultExt = "tmx";
             saveFileDialog.Filter = "TMX Files|*.tmx|All Files|*.*";
             saveFileDialog.FileName = trackName + ".tmx";
@@ -319,36 +313,25 @@ namespace MKSCTrackImporter
                 }
                 catch (Exception ex)
                 {
-                    if (MessageBox.Show($"Error exporting tilemap: {ex}", "Export Error", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error) == DialogResult.Retry)
-                    {
-                        goto SaveFile;
-                    }
-                    else
-                    {
-                        return;
-                    }
+                    AdvancedImport.Error.TilemapExportError(ex);
+                    return;
                 }
             }
             else
             {
-                if (MessageBox.Show("Please select a save location", "Export Aborted", MessageBoxButtons.RetryCancel, MessageBoxIcon.Warning) == DialogResult.Retry)
-                {
-                    goto SaveFile;
-                }
-                else
-                {
-                    return;
-                }
+                AdvancedImport.Error.NoSaveLocationError();
+                return;
             }
-            MessageBox.Show("Sucessfully exported tilemap", "Sucess", MessageBoxButtons.OK, MessageBoxIcon.Information);
             #endregion
+
+            MessageBox.Show("Sucessfully exported tilemap", "Sucess", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         private void tilesetExport_Click(object sender, EventArgs e)
         {
             #region Track selected check
             if (trackSelector.SelectedIndex < 0)
             {
-                MessageBox.Show("No Track Selected", "Please Select a track", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                AdvancedImport.Error.NoTrackSelectedError();
                 return;
             }
             #endregion
@@ -412,9 +395,9 @@ namespace MKSCTrackImporter
                 pal.Entries[i] = Color.Black;
             }
             image.Palette = pal;
-        #endregion
-        #region Save files
-        SavePNG:
+            #endregion
+            
+            #region Save Image
             saveFileDialog.DefaultExt = "png";
             saveFileDialog.Filter = "PNG Files|*.png|All Files|*.*";
 
@@ -423,33 +406,22 @@ namespace MKSCTrackImporter
             {
                 try
                 {
-                    image.Save(saveFileDialog.FileName, System.Drawing.Imaging.ImageFormat.Png);
+                    image.Save(saveFileDialog.FileName, ImageFormat.Png);
                 }
                 catch (Exception ex)
                 {
-                    if (MessageBox.Show($"Error saving tilemap {ex}", "Export Error", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error) == DialogResult.Retry)
-                    {
-                        goto SavePNG;
-                    }
-                    else
-                    {
-                        return;
-                    }
+                    AdvancedImport.Error.TilesetExportError(ex);
+                    return;
                 }
             }
             else
             {
-                if (MessageBox.Show("Please select a save location", "Export Aborted", MessageBoxButtons.RetryCancel, MessageBoxIcon.Warning) == DialogResult.Retry)
-                {
-                    goto SavePNG;
-                }
-                else
-                {
-                    return;
-                }
+                AdvancedImport.Error.NoSaveLocationError();
+                return;
             }
             MessageBox.Show("Sucessfully exported tileset image", "Sucess", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        SaveTSX:
+            #endregion
+            #region Save TSX
             saveFileDialog.DefaultExt = "tsx";
             saveFileDialog.Filter = "TSX Files|*.tsx|All Files|*.*";
             saveFileDialog.FileName = trackName + ".tsx";
@@ -483,85 +455,67 @@ namespace MKSCTrackImporter
                 }
                 catch (Exception ex)
                 {
-                    if (MessageBox.Show($"Error saving tilemap {ex}", "Export Error", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error) == DialogResult.Retry)
-                    {
-                        goto SaveTSX;
-                    }
-                    else
-                    {
-                        return;
-                    }
+                    AdvancedImport.Error.TilesetExportError(ex);
+                    return;
                 }
             }
             else
             {
-                if (MessageBox.Show("Please select a save location", "Export Aborted", MessageBoxButtons.RetryCancel, MessageBoxIcon.Warning) == DialogResult.Retry)
-                {
-                    goto SaveTSX;
-                }
-                else
-                {
-                    return;
-                }
+                AdvancedImport.Error.NoSaveLocationError();
+                return;
             }
-            MessageBox.Show("Sucessfully exported tileset", "Sucess", MessageBoxButtons.OK, MessageBoxIcon.Information);
             #endregion
+            MessageBox.Show("Sucessfully exported tileset", "Sucess", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         private void tilemapImport_Click(object sender, EventArgs e)
         {
             #region Track selected check
             if (trackSelector.SelectedIndex < 0)
             {
-                MessageBox.Show("No Track Selected", "Please Select a track",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                AdvancedImport.Error.NoTrackSelectedError();
                 return;
             }
             #endregion
             #region Import file
             openFileDialog.Filter = "TMX Files|*.tmx|All Files|*.*";
-            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            if (openFileDialog.ShowDialog() != DialogResult.OK)
             {
-                XDocument tilemap;
+                AdvancedImport.Error.NoFileSelectedError();
+                return;
+            }
+            XDocument tilemap;
 
-#if !DEBUG
-                try
-                {
-#endif
+            try
+            {
 
-                    tilemap = XDocument.Load(openFileDialog.FileName);
+                tilemap = XDocument.Load(openFileDialog.FileName);
+            }
+            catch (Exception ex)
+            {
+                AdvancedImport.Error.FileReadError(ex);
+                return;
+            }
 
-#if !DEBUG
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"{ex.ToString()}", "Error reading file",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-#endif
-
-                XElement? root = tilemap.Root;
-
-#pragma warning disable CS8602
-                if ((root.Name == "map")
-                    && (root.Attribute("orientation").Value == "orthogonal")
-                    && (root.Attribute("tilewidth").Value == "8")
-                    && (root.Attribute("tileheight").Value == "8")
-                    && (root.Attribute("infinite").Value == "0")
-                    )
-                {
-                    XElement tilemapLayer = root.Descendants("layer").First(o => o.Attribute("name").Value == "Tilemap");
-                    var trackWidth = Int32.Parse(tilemapLayer.Attribute("width").Value) / 128;
-                    var trackHeight = Int32.Parse(tilemapLayer.Attribute("height").Value) / 128;
-                    selectedTrack.TrackHeight = (byte)trackHeight;
-                    selectedTrack.TrackWidth = (byte)trackWidth;
-                    XElement data = root.Descendants("data").First(o => o.Attribute("encoding").Value == "csv");
-                    XElement startPositions = root.Descendants("objectgroup").First(o => o.Attribute("name").Value == "Start Line");
-                    var split = data.Value.Split(',');
-                    byte[] trackData = split.Take(split.Length - 1).Select(s => (byte)(int.Parse(s) - 1)).ToArray(); // Convert CSV to byte array
-                    selectedTrack.Layout.indicies = trackData;
-                
-                    #region Finish Line
+            XElement? root = tilemap.Root;
+            if ((root.Name == "map")
+                && (root.Attribute("orientation").Value == "orthogonal")
+                && (root.Attribute("tilewidth").Value == "8")
+                && (root.Attribute("tileheight").Value == "8")
+                && (root.Attribute("infinite").Value == "0")
+                )
+            {
+                XElement tilemapLayer = root.Descendants("layer").First(o => o.Attribute("name").Value == "Tilemap");
+                var trackWidth = Int32.Parse(tilemapLayer.Attribute("width").Value) / 128;
+                var trackHeight = Int32.Parse(tilemapLayer.Attribute("height").Value) / 128;
+                selectedTrack.TrackHeight = (byte)trackHeight;
+                selectedTrack.TrackWidth = (byte)trackWidth;
+                XElement data = root.Descendants("data").First(o => o.Attribute("encoding").Value == "csv");
+                XElement startPositions = root.Descendants("objectgroup").First(o => o.Attribute("name").Value == "Start Line");
+                var split = data.Value.Split(',');
+                byte[] trackData = split.Take(split.Length - 1).Select(s => (byte)(int.Parse(s) - 1)).ToArray(); // Convert CSV to byte array
+                selectedTrack.Layout.indicies = trackData;
+            
+                #region Finish Line
                         GameObject[] finishGameObjectData = (
                             from o in startPositions.Elements("object").Select(o => o.Element("properties"))
                             select new GameObject(
@@ -572,9 +526,14 @@ namespace MKSCTrackImporter
                             )).ToArray();
                         selectedTrack.FinishLine.GameObjects = finishGameObjectData;
                         #endregion
-                
-                    #region Zones
+            
+                #region Zones
                     XElement zonesElement = root.Descendants("objectgroup").First(o => o.Attribute("name").Value == "AI Zones");
+                    if (zonesElement.Elements("object").Count() > 255)
+                    {
+                        AdvancedImport.Error.ZoneCountError();
+                        return;
+                    }
                     int oldLen = selectedTrack.TrackAI.Zones.Length;
                     if (selectedTrack.TrackAI.Zones.Length != zonesElement.Elements("object").Count())
                     {
@@ -585,12 +544,6 @@ namespace MKSCTrackImporter
                             {
                                 selectedTrack.TrackAI.Zones[j] = new AiZone();
                             }
-                        }
-                        if (selectedTrack.TrackAI.Zones.Length > 255)
-                        {
-                            MessageBox.Show($"Tracks cannot have more than 255 zones. Exiting.", "Error",
-                            MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            return;
                         }
                         selectedTrack.TrackAI.zonesCount = (byte)selectedTrack.TrackAI.Zones.Length;
                     }
@@ -605,7 +558,10 @@ namespace MKSCTrackImporter
                 
                             int? cornerIndex = FindCorner(trianglePoints);
                             if (cornerIndex == null)
-                                MessageBox.Show($"Error reading track: Invalid triangle zone in AI zones", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            {
+                                AdvancedImport.Error.InvalidZoneError();
+                            }
+                                
                 
                             Point cornerPos = trianglePoints[cornerIndex.Value];
                             trianglePoints = trianglePoints.Select(o => new Point(o.X + cornerPos.X, o.Y + cornerPos.Y)).ToArray();
@@ -633,8 +589,8 @@ namespace MKSCTrackImporter
                         }
                     }
                     #endregion
-                
-                    #region Targets
+            
+                #region Targets
                     XElement targets1element = root.Descendants("objectgroup").First(o => o.Attribute("name").Value == "AI Targets set 1");
                     XElement targets2element = root.Descendants("objectgroup").First(o => o.Attribute("name").Value == "AI Targets set 2");
                     XElement targets3element = root.Descendants("objectgroup").First(o => o.Attribute("name").Value == "AI Targets set 3");
@@ -644,8 +600,7 @@ namespace MKSCTrackImporter
                         (targets3element.Elements("object").Count() != selectedTrack.TrackAI.Zones.Length)
                         )
                     {
-                        MessageBox.Show($"Each target group must have the same number of targets as there are zones. Exiting.", "Error",
-                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        AdvancedImport.Error.TargetCountError();
                         return;
                     }
                 
@@ -675,10 +630,8 @@ namespace MKSCTrackImporter
                         selectedTrack.TrackAI.Targets[i++].Intersection = (ushort)((props.First(p => p.Attribute("name").Value == "intersection").Attribute("value").Value == "false")?0:8);
                     }
                     #endregion
-                
-                    MessageBox.Show("Sucessfully imported tilemap", "Sucess", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-#pragma warning restore CS8602
+            
+                MessageBox.Show("Sucessfully imported tilemap", "Sucess", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             #endregion
         }
@@ -734,8 +687,7 @@ namespace MKSCTrackImporter
             #region Track selected check
             if (trackSelector.SelectedIndex < 0)
             {
-                MessageBox.Show("No Track Selected", "Please Select a track",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                AdvancedImport.Error.NoFileSelectedError();
                 return;
             }
             #endregion
@@ -743,7 +695,17 @@ namespace MKSCTrackImporter
             openFileDialog.Filter = "TSX Files|*.tsx;|All Files|*.*";
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
-                XDocument tilesetDoc = XDocument.Load(openFileDialog.FileName);
+                XDocument tilesetDoc;
+                try
+                {
+
+                    tilesetDoc = XDocument.Load(openFileDialog.FileName);
+                }
+                catch (Exception ex)
+                {
+                    AdvancedImport.Error.FileReadError(ex);
+                    return;
+                }
 
                 var tilesetPath = Path.Combine(Path.GetDirectoryName(openFileDialog.FileName), tilesetDoc.Root.Element("image").Attribute("source").Value);
 
@@ -761,8 +723,7 @@ namespace MKSCTrackImporter
                 Rectangle rect = new Rectangle(0, 0, width, height);
                 if (tileset.PixelFormat != PixelFormat.Format8bppIndexed)
                 {
-                    MessageBox.Show("Only 8 bpp paletted images are supported. Check the FAQ for more info", "Image type error",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    AdvancedImport.Error.ImageFormatError();
                     return;
                 }
                 var bitmapData = tileset.LockBits(rect, ImageLockMode.ReadOnly,
@@ -809,7 +770,7 @@ namespace MKSCTrackImporter
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error saving game: {ex}", "Save Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                AdvancedImport.Error.SerializeError(ex);
 #if DEBUG
                 throw;
 #endif
@@ -850,14 +811,13 @@ namespace MKSCTrackImporter
         {
             if (trackSelector.SelectedIndex < 0)
             {
-                MessageBox.Show("No Track Selected", "Please Select a track", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                AdvancedImport.Error.NoTrackSelectedError();
                 return;
             }
             selectedTrack.TilesetLookback = (sbyte)(comboBox1.SelectedIndex - trackSelector.SelectedIndex);
         }
         private void button3_Click(object sender, EventArgs e)
         {
-        SaveProject:
             saveFileDialog.DefaultExt = "tiled-project";
             saveFileDialog.Filter = "Tiled project files|*.tiled-project|All Files|*.*";
 
@@ -870,26 +830,14 @@ namespace MKSCTrackImporter
                 }
                 catch (Exception ex)
                 {
-                    if (MessageBox.Show($"Error exporting project {ex}", "Export Error", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error) == DialogResult.Retry)
-                    {
-                        goto SaveProject;
-                    }
-                    else
-                    {
-                        return;
-                    }
+                    AdvancedImport.Error.ProjectExportError(ex);
+                    return;
                 }
             }
             else
             {
-                if (MessageBox.Show("Please select a save location", "Export Aborted", MessageBoxButtons.RetryCancel, MessageBoxIcon.Warning) == DialogResult.Retry)
-                {
-                    goto SaveProject;
-                }
-                else
-                {
-                    return;
-                }
+                AdvancedImport.Error.NoSaveLocationError();
+                return;
             }
         }
     }
