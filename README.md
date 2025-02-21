@@ -1,6 +1,6 @@
 # MKSCTrackImporter
 
-**This project is depricated. Use [https://github.com/aplerdal/AdvancedEdit6](https://github.com/aplerdal/AdvancedEdit6) instead.**
+**This project is depricated. Use [https://github.com/aplerdal/AdvancedEdit6](https://github.com/aplerdal/AdvancedEdit) instead.**
 This project will only be updated for critical bugfixes.
 
 A track importer and editor for Mario Kart: Super Circuit.\
